@@ -142,7 +142,7 @@ function Overview({
     value: orders.filter((o) => o.status === s).length,
   })).filter((d) => d.value > 0)
 
-  const COLORS = ["#1cc41c", "#0b7a12", "#fbbf24", "#22d47f", "#60a5fa"]
+  const COLORS = ["#08cb00", "#067a00", "#fbbf24", "#22d47f", "#60a5fa"]
 
   const revenueByProduct = useMemo(() => {
     const map = new Map<string, number>()
@@ -189,7 +189,7 @@ function Overview({
               <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={50} />
               <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v / 1000}k`} />
               <Tooltip formatter={(v) => formatMNT(Number(v))} />
-              <Bar dataKey="value" fill="#1cc41c" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="value" fill="#08cb00" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </Card>

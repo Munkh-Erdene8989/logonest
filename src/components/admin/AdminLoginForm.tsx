@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { signInWithEmailAndPassword } from "firebase/auth"
 import { getFirebaseAuth } from "@/lib/firebase/client"
+import { Logo } from "@/components/Logo"
 import { Button, Input } from "@/components/ui"
 
 export function AdminLoginForm() {
@@ -39,6 +40,7 @@ export function AdminLoginForm() {
   return (
     <div className="mx-auto flex max-w-md flex-col justify-center px-5 py-24">
       <div className="rounded-3xl border border-border bg-card p-8">
+        <Logo className="mb-6" />
         <h1 className="font-display text-2xl font-extrabold">Админ нэвтрэх</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           LOGONEST удирдлагын самбар
