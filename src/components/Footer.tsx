@@ -11,7 +11,7 @@ export function Footer() {
   const isAdminDashboard =
     (pathname === "/admin" || pathname.startsWith("/admin/")) &&
     pathname !== "/admin/login"
-  if (isAdminDashboard) return null
+  if (isAdminDashboard || pathname === "/sport" || pathname.startsWith("/sport/")) return null
 
   return (
     <footer className="mt-24 border-t border-border bg-ink text-white">

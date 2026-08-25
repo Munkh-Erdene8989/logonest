@@ -143,6 +143,44 @@ body {
   animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+html.sport-studio,
+html.sport-studio body {
+  background: #050505;
+  color: #f1f4f2;
+}
+
+@keyframes sport-nav-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 8px 0 rgb(8 203 0 / 0.28);
+  }
+  50% {
+    box-shadow: 0 0 12px 1px rgb(8 203 0 / 0.42);
+  }
+}
+
+@keyframes sport-nav-shimmer {
+  0% {
+    transform: translateX(-130%) skewX(-16deg);
+  }
+  100% {
+    transform: translateX(280%) skewX(-16deg);
+  }
+}
+
+.sport-nav-link {
+  animation: sport-nav-glow 2.4s ease-in-out infinite;
+}
+
+.sport-nav-shimmer {
+  position: absolute;
+  inset: 0;
+  width: 42%;
+  background: linear-gradient(90deg, transparent, rgb(8 203 0 / 0.38), transparent);
+  animation: sport-nav-shimmer 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -154,6 +192,10 @@ body {
     animation: none;
   }
   .animate-fade-up {
+    animation: none;
+  }
+  .sport-nav-link,
+  .sport-nav-shimmer {
     animation: none;
   }
 }

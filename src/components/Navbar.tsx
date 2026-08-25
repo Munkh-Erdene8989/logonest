@@ -16,7 +16,11 @@ const LINKS = [
   { href: "/contact", label: "Холбоо барих" },
 ]
 
-function ThemeToggle() {
+function isSportPath(pathname: string) {
+  return pathname === "/sport" || pathname.startsWith("/sport/")
+}
+
+function ThemeToggle({ light }: { light?: boolean }) {
   const [mode, setMode] = useState<"light" | "dark">("light")
 
   useEffect(() => {
@@ -40,7 +44,12 @@ function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className="grid h-10 w-10 place-items-center rounded-full text-foreground/70 transition-colors duration-200 hover:bg-secondary hover:text-foreground motion-reduce:transition-none"
+      className={cx(
+        "grid h-10 w-10 place-items-center rounded-full transition-colors duration-200 motion-reduce:transition-none",
+        light
+          ? "text-white/70 hover:bg-white/10 hover:text-white"
+          : "text-foreground/70 hover:bg-secondary hover:text-foreground",
+      )}
       aria-label={mode === "dark" ? "Гэрэл горим" : "Харанхуй горим"}
     >
       <AnimatePresence mode="wait" initial={false}>
@@ -59,6 +68,35 @@ function ThemeToggle() {
   )
 }
 
+function SportNavLink({
+  mobile,
+  onClick,
+}: {
+  mobile?: boolean
+  onClick?: () => void
+}) {
+  const pathname = usePathname()
+  const active = isSportPath(pathname)
+
+  return (
+    <Link
+      href="/sport"
+      onClick={onClick}
+      className={cx(
+        "sport-nav-link relative inline-flex shrink-0 items-center gap-1.5 overflow-hidden rounded-full border border-primary/45 bg-primary/10 font-medium text-primary",
+        mobile ? "my-1 h-11 w-full justify-between px-4 text-sm" : "h-9 px-3 text-sm",
+        active && "border-primary bg-primary/20",
+      )}
+    >
+      <span className="sport-nav-shimmer" aria-hidden />
+      <span className="relative">Спорт хувцас</span>
+      <span className="relative grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[8px] font-extrabold leading-none tracking-wide text-primary-foreground">
+        3D
+      </span>
+    </Link>
+  )
+}
+
 function isAdminDashboard(pathname: string) {
   return (
     (pathname === "/admin" || pathname.startsWith("/admin/")) &&
@@ -69,6 +107,7 @@ function isAdminDashboard(pathname: string) {
 export function Navbar() {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
+  const sport = isSportPath(pathname)
 
   useEffect(() => {
     setOpen(false)
@@ -77,13 +116,21 @@ export function Navbar() {
   if (isAdminDashboard(pathname)) return null
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/70 bg-background/85 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
-        <Link href="/" onClick={() => setOpen(false)}>
-          <Logo />
+    <header
+      className={cx(
+        "z-50 border-b backdrop-blur-md",
+        sport
+          ? "fixed inset-x-0 top-0 border-white/10 bg-black/35 text-white"
+          : "sticky top-0 border-border/70 bg-background/85",
+      )}
+    >
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-5 sm:px-8">
+        <Link href="/" onClick={() => setOpen(false)} className="shrink-0">
+          <Logo className={sport ? "text-white" : undefined} />
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex">
+        <nav className="hidden items-center gap-0.5 lg:flex">
+          <SportNavLink />
           {LINKS.map((l) => {
             const active = pathname === l.href || pathname.startsWith(`${l.href}/`)
             return (
@@ -91,8 +138,14 @@ export function Navbar() {
                 key={l.href}
                 href={l.href}
                 className={cx(
-                  "rounded-full px-4 py-2 text-sm font-medium transition-colors duration-200 motion-reduce:transition-none",
-                  active ? "text-primary" : "text-foreground/70 hover:text-foreground",
+                  "inline-flex h-9 items-center whitespace-nowrap rounded-full px-3 text-sm font-medium transition-colors duration-200 motion-reduce:transition-none",
+                  sport
+                    ? active
+                      ? "text-primary"
+                      : "text-white/70 hover:text-white"
+                    : active
+                      ? "text-primary"
+                      : "text-foreground/70 hover:text-foreground",
                 )}
               >
                 {l.label}
@@ -101,11 +154,16 @@ export function Navbar() {
           })}
         </nav>
 
-        <div className="hidden items-center gap-2 lg:flex">
-          <ThemeToggle />
+        <div className="hidden shrink-0 items-center gap-2 lg:flex">
+          <ThemeToggle light={sport} />
           <Link
             href="/products"
-            className="grid h-10 w-10 place-items-center rounded-full text-foreground/70 transition-colors duration-200 hover:bg-secondary hover:text-foreground motion-reduce:transition-none"
+            className={cx(
+              "grid h-10 w-10 place-items-center rounded-full transition-colors duration-200 motion-reduce:transition-none",
+              sport
+                ? "text-white/70 hover:bg-white/10 hover:text-white"
+                : "text-foreground/70 hover:bg-secondary hover:text-foreground",
+            )}
             aria-label="Хайх"
           >
             <Search className="h-4 w-4" />
@@ -116,9 +174,12 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-1 lg:hidden">
-          <ThemeToggle />
+          <ThemeToggle light={sport} />
           <button
-            className="grid h-10 w-10 place-items-center rounded-xl border border-border"
+            className={cx(
+              "grid h-10 w-10 place-items-center rounded-xl border",
+              sport ? "border-white/20" : "border-border",
+            )}
             onClick={() => setOpen((v) => !v)}
             aria-label="Цэс"
             aria-expanded={open}
@@ -135,9 +196,13 @@ export function Navbar() {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden border-t border-border bg-background lg:hidden"
+            className={cx(
+              "overflow-hidden border-t lg:hidden",
+              sport ? "border-white/10 bg-black/95" : "border-border bg-background",
+            )}
           >
             <nav className="mx-auto flex max-w-6xl flex-col px-5 py-3 sm:px-8">
+              <SportNavLink mobile onClick={() => setOpen(false)} />
               {LINKS.map((l) => {
                 const active = pathname === l.href || pathname.startsWith(`${l.href}/`)
                 return (
@@ -147,7 +212,13 @@ export function Navbar() {
                     onClick={() => setOpen(false)}
                     className={cx(
                       "rounded-xl px-4 py-3 text-sm font-medium",
-                      active ? "bg-accent text-accent-foreground" : "text-foreground/80",
+                      sport
+                        ? active
+                          ? "bg-primary/15 text-primary"
+                          : "text-white/80"
+                        : active
+                          ? "bg-accent text-accent-foreground"
+                          : "text-foreground/80",
                     )}
                   >
                     {l.label}
