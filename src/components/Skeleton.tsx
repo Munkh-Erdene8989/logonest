@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react"
 import { cx } from "./ui"
 
 export function Skeleton({ className }: { className?: string }) {
@@ -79,24 +80,35 @@ export function BlockSkeleton() {
 
 export function AdminSkeleton() {
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-8 lg:flex-row">
-      <aside className="hidden space-y-2 lg:block lg:w-60 lg:shrink-0">
-        <Skeleton className="mb-4 h-6 w-32" />
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-10 w-full rounded-xl" />
-        ))}
-      </aside>
-      <div className="min-w-0 flex-1 space-y-6">
-        <div className="grid gap-4 sm:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full rounded-2xl" />
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-8 sm:py-8">
+      <div className="mb-4 flex items-center gap-2.5 text-sm text-muted-foreground sm:mb-6">
+        <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
+        Самбарыг уншиж байна…
+      </div>
+      <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row">
+        <aside className="hidden space-y-2 lg:block lg:w-60 lg:shrink-0">
+          <Skeleton className="mb-4 h-6 w-32" />
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-11 w-full rounded-xl" />
+          ))}
+        </aside>
+        <div className="-mx-4 flex gap-2 overflow-hidden px-4 lg:hidden">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-11 w-24 shrink-0 rounded-xl" />
           ))}
         </div>
-        <Skeleton className="h-72 w-full rounded-2xl" />
-        <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full rounded-2xl" />
-          ))}
+        <div className="min-w-0 flex-1 space-y-6">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full rounded-2xl" />
+            ))}
+          </div>
+          <Skeleton className="h-72 w-full rounded-2xl" />
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-16 w-full rounded-2xl" />
+            ))}
+          </div>
         </div>
       </div>
     </div>

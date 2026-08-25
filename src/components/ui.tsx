@@ -6,6 +6,7 @@ import type {
   TextareaHTMLAttributes,
 } from "react"
 import Link from "next/link"
+import { Loader2 } from "lucide-react"
 
 function cx(...parts: (string | false | undefined | null)[]) {
   return parts.filter(Boolean).join(" ")
@@ -14,6 +15,7 @@ function cx(...parts: (string | false | undefined | null)[]) {
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "outline" | "ghost"
   size?: "sm" | "md" | "lg"
+  loading?: boolean
 }
 
 const btnBase =
@@ -35,10 +37,20 @@ export function Button({
   variant = "primary",
   size = "md",
   className,
+  loading,
+  disabled,
+  children,
   ...props
 }: ButtonProps) {
   return (
-    <button className={cx(btnBase, btnVariant[variant], btnSize[size], className)} {...props} />
+    <button
+      className={cx(btnBase, btnVariant[variant], btnSize[size], className)}
+      disabled={disabled || loading}
+      {...props}
+    >
+      {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
+      {children}
+    </button>
   )
 }
 

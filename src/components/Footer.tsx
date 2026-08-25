@@ -1,9 +1,18 @@
+"use client"
+
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Clock, Mail, MapPin, Phone } from "lucide-react"
 import { COMPANY } from "@/lib/company"
 import { Logo } from "./Logo"
 
 export function Footer() {
+  const pathname = usePathname()
+  const isAdminDashboard =
+    (pathname === "/admin" || pathname.startsWith("/admin/")) &&
+    pathname !== "/admin/login"
+  if (isAdminDashboard) return null
+
   return (
     <footer className="mt-24 border-t border-border bg-ink text-white">
       <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 sm:px-8 md:grid-cols-4">

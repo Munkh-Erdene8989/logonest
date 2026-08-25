@@ -59,6 +59,13 @@ function ThemeToggle() {
   )
 }
 
+function isAdminDashboard(pathname: string) {
+  return (
+    (pathname === "/admin" || pathname.startsWith("/admin/")) &&
+    pathname !== "/admin/login"
+  )
+}
+
 export function Navbar() {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
@@ -66,6 +73,8 @@ export function Navbar() {
   useEffect(() => {
     setOpen(false)
   }, [pathname])
+
+  if (isAdminDashboard(pathname)) return null
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/70 bg-background/85 backdrop-blur-md">

@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   Bar,
@@ -15,7 +15,9 @@ import {
 } from "recharts"
 import {
   ClipboardList,
+  ImagePlus,
   LayoutDashboard,
+  Loader2,
   LogOut,
   Mail,
   Newspaper,
@@ -78,29 +80,44 @@ export function AdminDashboard({
   }
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-8 lg:flex-row">
+    <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:gap-6 sm:px-8 sm:py-8 lg:flex-row">
       <aside className="lg:w-60 lg:shrink-0">
-        <div className="lg:sticky lg:top-24">
-          <div className="mb-4 hidden lg:block">
-            <div className="font-display text-lg font-extrabold">Админ самбар</div>
-            <div className="text-xs text-muted-foreground">LOGONEST ХХК</div>
+        <div className="lg:sticky lg:top-4">
+          <div className="mb-3 flex items-center justify-between gap-3 lg:mb-4 lg:block">
+            <div>
+              <div className="font-display text-lg font-extrabold">Админ самбар</div>
+              <div className="text-xs text-muted-foreground">LOGONEST ХХК</div>
+            </div>
+            <button
+              onClick={logout}
+              className="flex h-11 items-center gap-2 rounded-xl px-3 text-sm font-medium text-muted-foreground hover:bg-secondary lg:hidden"
+            >
+              <LogOut className="h-4 w-4" /> Гарах
+            </button>
           </div>
-          <nav className="flex gap-2 overflow-x-auto lg:flex-col">
+          <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] lg:mx-0 lg:flex-col lg:px-0 [&::-webkit-scrollbar]:hidden">
             {TABS.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 className={cx(
-                  "flex shrink-0 items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors duration-200 motion-reduce:transition-none",
+                  "flex h-11 shrink-0 items-center gap-2.5 rounded-xl px-4 text-sm font-medium transition-colors duration-200 motion-reduce:transition-none",
                   tab === t.id
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                     : "text-foreground/70 hover:bg-secondary",
                 )}
               >
                 <t.icon className="h-4 w-4" />
                 {t.label}
                 {t.id === "messages" && unread > 0 && (
-                  <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-xs text-primary-foreground">
+                  <span
+                    className={cx(
+                      "ml-auto grid h-5 min-w-5 place-items-center rounded-full px-1 text-xs",
+                      tab === t.id
+                        ? "bg-primary-foreground/20 text-primary-foreground"
+                        : "bg-primary text-primary-foreground",
+                    )}
+                  >
                     {unread}
                   </span>
                 )}
@@ -109,7 +126,7 @@ export function AdminDashboard({
           </nav>
           <button
             onClick={logout}
-            className="mt-4 hidden items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-secondary lg:flex"
+            className="mt-4 hidden h-11 items-center gap-2.5 rounded-xl px-4 text-sm font-medium text-muted-foreground hover:bg-secondary lg:flex"
           >
             <LogOut className="h-4 w-4" /> Гарах
           </button>
@@ -308,84 +325,242 @@ const EMPTY_PRODUCT: Product = {
   category: "Оффсет хэвлэл",
   tagline: "",
   description: "",
-  image: "https://images.unsplash.com/photo-1503694978374-8a2fa686963a?w=900&h=650&fit=crop&auto=format",
+  image: "",
   basePrice: 0,
   unit: "ш",
   features: [],
 }
 
+const IMAGE_EXT = new Set(["jpg", "jpeg", "png", "webp"])
+const MAX_IMAGE = 5 * 1024 * 1024
+
 function ProductsAdmin({ products }: { products: Product[] }) {
   const [editing, setEditing] = useState<Product | null>(null)
+  const [file, setFile] = useState<File | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [error, setError] = useState("")
+  const [dragOver, setDragOver] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    if (!file) {
+      setPreview(null)
+      return
+    }
+    const url = URL.createObjectURL(file)
+    setPreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [file])
+
+  function startEdit(product: Product) {
+    setEditing({ ...product })
+    setFile(null)
+    setError("")
+  }
+
+  function onFileChange(next: File | null) {
+    if (!next) return
+    const ext = next.name.split(".").pop()?.toLowerCase() ?? ""
+    if (!IMAGE_EXT.has(ext)) {
+      setError("Зөвшөөрөгдсөн формат: JPG, PNG, WebP.")
+      return
+    }
+    if (next.size > MAX_IMAGE) {
+      setError("Зураг 5MB-аас хэтэрч болохгүй.")
+      return
+    }
+    setError("")
+    setFile(next)
+  }
 
   async function save() {
     if (!editing) return
-    await saveProductAction(editing)
-    setEditing(null)
-    router.refresh()
+    if (!editing.name.trim()) return
+    if (!file && !editing.image.trim()) {
+      setError("Зураг оруулах эсвэл URL бичнэ үү.")
+      return
+    }
+    setSaving(true)
+    setError("")
+    try {
+      const result = await saveProductAction(editing, file)
+      if (result && !result.ok) {
+        setError(result.error)
+        return
+      }
+      setEditing(null)
+      setFile(null)
+      router.refresh()
+    } catch {
+      setError("Хадгалахад алдаа гарлаа.")
+    } finally {
+      setSaving(false)
+    }
   }
+
+  const previewSrc = preview || editing?.image || ""
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <SectionTitle title="Бүтээгдэхүүн" subtitle="Нэмэх, засах, устгах" />
-        <Button size="sm" onClick={() => setEditing({ ...EMPTY_PRODUCT })}>
+        <Button size="sm" className="shrink-0" onClick={() => startEdit({ ...EMPTY_PRODUCT })}>
           <Plus className="h-4 w-4" /> Нэмэх
         </Button>
       </div>
 
       {editing && (
-        <div className="rounded-2xl border border-primary/40 bg-accent/20 p-6">
+        <div className="rounded-2xl border border-primary/40 bg-accent/20 p-4 sm:p-6">
           <h3 className="font-display font-bold">{editing.id ? "Засах" : "Шинэ бүтээгдэхүүн"}</h3>
+
+          <label
+            className={cx(
+              "mt-4 flex min-h-40 cursor-pointer flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border-2 border-dashed py-8 text-center transition-colors duration-200 motion-reduce:transition-none",
+              dragOver ? "border-primary bg-accent/40" : "border-border hover:border-primary hover:bg-accent/20",
+            )}
+            onDragOver={(e) => {
+              e.preventDefault()
+              setDragOver(true)
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault()
+              setDragOver(false)
+              onFileChange(e.dataTransfer.files[0] ?? null)
+            }}
+          >
+            {previewSrc ? (
+              <div className="relative h-40 w-full max-w-xs overflow-hidden rounded-xl bg-muted sm:h-48">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={previewSrc} alt="" className="h-full w-full object-cover" />
+              </div>
+            ) : (
+              <ImagePlus className="h-8 w-8 text-primary" />
+            )}
+            <div>
+              <p className="font-medium">{previewSrc ? "Зураг солих" : "Зураг оруулах"}</p>
+              <p className="text-sm text-muted-foreground">JPG, PNG, WebP · 5MB хүртэл · товшиж сонгоно уу</p>
+            </div>
+            {file && (
+              <span className="rounded-full bg-accent px-3 py-1 text-sm font-medium text-accent-foreground">
+                {file.name}
+              </span>
+            )}
+            <input
+              type="file"
+              className="hidden"
+              accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+              onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
+            />
+          </label>
+
+          <div className="mt-4">
+            <Input
+              label="Эсвэл зургийн URL"
+              value={editing.image}
+              onChange={(e) => setEditing({ ...editing, image: e.target.value })}
+              placeholder="https://…"
+              hint="Файл оруулаагүй бол URL ашиглана"
+            />
+          </div>
+
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Input label="Нэр" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
             <Input label="Ангилал" value={editing.category} onChange={(e) => setEditing({ ...editing, category: e.target.value })} />
-            <Input label="Богино тайлбар" value={editing.tagline} onChange={(e) => setEditing({ ...editing, tagline: e.target.value })} />
-            <Input label="Зургийн URL" value={editing.image} onChange={(e) => setEditing({ ...editing, image: e.target.value })} />
+            <div className="sm:col-span-2">
+              <Input
+                label="Богино тайлбар"
+                value={editing.tagline}
+                onChange={(e) => setEditing({ ...editing, tagline: e.target.value })}
+              />
+            </div>
             <Input label="Үнэ (₮)" type="number" value={editing.basePrice} onChange={(e) => setEditing({ ...editing, basePrice: Number(e.target.value) })} />
             <Input label="Нэгж" value={editing.unit} onChange={(e) => setEditing({ ...editing, unit: e.target.value })} />
           </div>
           <Textarea
             label="Дэлгэрэнгүй"
             className="mt-4"
-            rows={2}
+            rows={3}
             value={editing.description}
             onChange={(e) => setEditing({ ...editing, description: e.target.value })}
           />
-          <div className="mt-4 flex gap-3">
-            <Button onClick={save} disabled={!editing.name}>Хадгалах</Button>
-            <Button variant="ghost" onClick={() => setEditing(null)}>Болих</Button>
+          {error && <p className="mt-3 text-sm text-primary">{error}</p>}
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <Button className="w-full sm:w-auto" onClick={save} disabled={!editing.name} loading={saving}>
+              Хадгалах
+            </Button>
+            <Button
+              className="w-full sm:w-auto"
+              variant="ghost"
+              disabled={saving}
+              onClick={() => {
+                setEditing(null)
+                setFile(null)
+                setError("")
+              }}
+            >
+              Болих
+            </Button>
           </div>
         </div>
       )}
 
       <div className="grid gap-3">
         {products.map((p) => (
-          <div key={p.id} className="flex items-center gap-4 rounded-2xl border border-border bg-card p-3">
-            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
-              <ImageWithSkeleton
-                src={p.image}
-                alt={p.name}
-                fill
-                sizes="64px"
-                className="object-cover"
-              />
+          <div
+            key={p.id}
+            className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 sm:flex-row sm:items-center"
+          >
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
+                {p.image ? (
+                  <ImageWithSkeleton
+                    src={p.image}
+                    alt={p.name}
+                    fill
+                    sizes="64px"
+                    className="object-cover"
+                  />
+                ) : (
+                  <span className="grid h-full w-full place-items-center text-muted-foreground">
+                    <ImagePlus className="h-5 w-5" />
+                  </span>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="font-display font-bold">{p.name}</div>
+                <div className="truncate text-sm text-muted-foreground">
+                  {p.category} · {formatMNT(p.basePrice)}/{p.unit}
+                </div>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="font-display font-bold">{p.name}</div>
-              <div className="truncate text-sm text-muted-foreground">{p.category} · {formatMNT(p.basePrice)}/{p.unit}</div>
+            <div className="flex gap-2 sm:shrink-0">
+              <Button size="sm" variant="outline" className="flex-1 sm:flex-none" onClick={() => startEdit(p)}>
+                Засах
+              </Button>
+              <button
+                onClick={async () => {
+                  setDeletingId(p.id)
+                  try {
+                    await deleteProductAction(p.id)
+                    router.refresh()
+                  } finally {
+                    setDeletingId(null)
+                  }
+                }}
+                disabled={deletingId === p.id}
+                className="grid h-11 w-11 place-items-center rounded-lg border border-border text-muted-foreground hover:border-primary hover:text-primary disabled:opacity-50"
+                aria-label="Устгах"
+              >
+                {deletingId === p.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+              </button>
             </div>
-            <Button size="sm" variant="outline" onClick={() => setEditing(p)}>Засах</Button>
-            <button
-              onClick={async () => {
-                await deleteProductAction(p.id)
-                router.refresh()
-              }}
-              className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground hover:border-primary hover:text-primary"
-              aria-label="Устгах"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
           </div>
         ))}
       </div>
@@ -396,6 +571,7 @@ function ProductsAdmin({ products }: { products: Product[] }) {
 function PricingAdmin({ pricing }: { pricing: PricingType[] }) {
   const [draft, setDraft] = useState<PricingType[]>(pricing)
   const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   function setMaterialPrice(typeId: string, matId: string, price: number) {
     setDraft((prev) =>
@@ -443,10 +619,16 @@ function PricingAdmin({ pricing }: { pricing: PricingType[] }) {
 
       <div className="flex items-center gap-3">
         <Button
+          loading={saving}
           onClick={async () => {
-            await updatePricingAction(draft)
-            setSaved(true)
-            setTimeout(() => setSaved(false), 1500)
+            setSaving(true)
+            try {
+              await updatePricingAction(draft)
+              setSaved(true)
+              setTimeout(() => setSaved(false), 1500)
+            } finally {
+              setSaving(false)
+            }
           }}
         >
           Хадгалах
