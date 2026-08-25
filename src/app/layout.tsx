@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Golos_Text, JetBrains_Mono } from "next/font/google"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
+import { MotionStack } from "@/components/motion/Providers"
 import "./globals.css"
 
 const golos = Golos_Text({
@@ -37,11 +38,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
-        <div className="flex min-h-screen flex-col">
-          <Navbar />
-          <div className="flex-1">{children}</div>
-          <Footer />
-        </div>
+        <MotionStack>
+          <div className="flex min-h-screen flex-col">
+            <Navbar />
+            <div className="flex-1">{children}</div>
+            <Footer />
+          </div>
+        </MotionStack>
       </body>
     </html>
   )

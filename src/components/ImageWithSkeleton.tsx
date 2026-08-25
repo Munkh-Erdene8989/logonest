@@ -14,7 +14,7 @@ export function ImageWithSkeleton({ className, onLoad, ...props }: ImageProps) {
       <Image
         {...props}
         className={cx(
-          "transition-opacity duration-300",
+          "transition-opacity duration-300 motion-reduce:transition-none",
           loaded ? "opacity-100" : "opacity-0",
           className,
         )}

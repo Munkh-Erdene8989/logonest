@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { getNews } from "@/lib/data"
+import { Reveal } from "@/components/motion/Reveal"
 import { Badge, Eyebrow, Section } from "@/components/ui"
 
 export const metadata: Metadata = { title: "Мэдээ" }
@@ -9,20 +10,22 @@ export default async function NewsPage() {
   const news = await getNews()
 
   return (
-    <Section className="py-14 animate-fade-up">
-      <Eyebrow>Мэдээ</Eyebrow>
-      <h1 className="mt-4 font-display text-4xl font-extrabold tracking-tight">
-        Мэдээ, урамшуулал, зөвлөгөө
-      </h1>
-      <p className="mt-3 max-w-xl text-muted-foreground">
-        Шинэ технологи, урамшуулал болон хэвлэлд зориулсан хэрэгтэй зөвлөмжүүд.
-      </p>
+    <Section className="py-14">
+      <Reveal from="load">
+        <Eyebrow>Мэдээ</Eyebrow>
+        <h1 className="mt-4 font-display text-4xl font-extrabold tracking-tight">
+          Мэдээ, урамшуулал, зөвлөгөө
+        </h1>
+        <p className="mt-3 max-w-xl text-muted-foreground">
+          Шинэ технологи, урамшуулал болон хэвлэлд зориулсан хэрэгтэй зөвлөмжүүд.
+        </p>
+      </Reveal>
 
-      <div className="mt-10 grid gap-6 md:grid-cols-3">
+      <Reveal stagger={0.07} className="mt-10 grid gap-6 md:grid-cols-3">
         {news.map((n) => (
           <article
             key={n.id}
-            className="group flex flex-col rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/40"
+            className="group flex flex-col rounded-2xl border border-border bg-card p-6 transition-colors duration-200 hover:border-primary/40 motion-reduce:transition-none"
           >
             <div className="flex items-center justify-between">
               <Badge className="bg-accent text-accent-foreground">{n.tag}</Badge>
@@ -34,7 +37,7 @@ export default async function NewsPage() {
             <p className="mt-2 flex-1 text-sm text-muted-foreground">{n.excerpt}</p>
           </article>
         ))}
-      </div>
+      </Reveal>
     </Section>
   )
 }

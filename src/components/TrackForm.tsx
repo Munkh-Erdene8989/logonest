@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
+import { AnimatePresence, motion } from "motion/react"
 import { PackageSearch, SearchX } from "lucide-react"
 import { trackOrdersAction } from "@/lib/actions/public"
 import { formatDate, formatMNT } from "@/lib/format"
 import type { Order } from "@/lib/types"
+import { Reveal } from "@/components/motion/Reveal"
 import { OrderTimeline, StatusBadge } from "@/components/shared"
 import { Button, Eyebrow, Section } from "@/components/ui"
 
@@ -37,16 +39,18 @@ export function TrackForm() {
   }, [])
 
   return (
-    <Section className="py-14 animate-fade-up">
+    <Section className="py-14">
       <div className="mx-auto max-w-2xl">
-        <Eyebrow>Захиалга хянах</Eyebrow>
-        <h1 className="mt-4 font-display text-4xl font-extrabold tracking-tight">
-          Захиалгын явц шалгах
-        </h1>
-        <p className="mt-3 text-muted-foreground">
-          Захиалгын дугаар, эсвэл захиалахдаа өгсөн утас/имэйлээ оруулаад хайна уу. Нэвтрэх
-          шаардлагагүй.
-        </p>
+        <Reveal from="load">
+          <Eyebrow>Захиалга хянах</Eyebrow>
+          <h1 className="mt-4 font-display text-4xl font-extrabold tracking-tight">
+            Захиалгын явц шалгах
+          </h1>
+          <p className="mt-3 text-muted-foreground">
+            Захиалгын дугаар, эсвэл захиалахдаа өгсөн утас/имэйлээ оруулаад хайна уу. Нэвтрэх
+            шаардлагагүй.
+          </p>
+        </Reveal>
 
         <form
           onSubmit={(e) => {
@@ -75,35 +79,50 @@ export function TrackForm() {
         </p>
 
         <div className="mt-10 space-y-6">
-          {result && result.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-border py-14 text-center">
-              <SearchX className="mx-auto h-8 w-8 text-muted-foreground" />
-              <p className="mt-3 font-medium">Захиалга олдсонгүй</p>
-              <p className="text-sm text-muted-foreground">
-                Дугаар эсвэл холбоо барих мэдээллээ шалгана уу.
-              </p>
-            </div>
-          )}
-          {result?.map((o) => (
-            <div key={o.code} className="rounded-2xl border border-border bg-card p-6">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="font-mono text-sm font-bold text-primary">{o.code}</div>
-                  <h2 className="mt-1 font-display text-xl font-bold">{o.productName}</h2>
-                  <p className="text-sm text-muted-foreground">{o.spec}</p>
+          <AnimatePresence>
+            {result && result.length === 0 && (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="rounded-2xl border border-dashed border-border py-14 text-center"
+              >
+                <SearchX className="mx-auto h-8 w-8 text-muted-foreground" />
+                <p className="mt-3 font-medium">Захиалга олдсонгүй</p>
+                <p className="text-sm text-muted-foreground">
+                  Дугаар эсвэл холбоо барих мэдээллээ шалгана уу.
+                </p>
+              </motion.div>
+            )}
+            {result?.map((o) => (
+              <motion.div
+                key={o.code}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="rounded-2xl border border-border bg-card p-6"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="font-mono text-sm font-bold text-primary">{o.code}</div>
+                    <h2 className="mt-1 font-display text-xl font-bold">{o.productName}</h2>
+                    <p className="text-sm text-muted-foreground">{o.spec}</p>
+                  </div>
+                  <StatusBadge status={o.status} />
                 </div>
-                <StatusBadge status={o.status} />
-              </div>
-              <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
-                <span>{formatDate(o.createdAt)}</span>
-                <span>{formatMNT(o.total)}</span>
-                {o.fileName && <span>Файл: {o.fileName}</span>}
-              </div>
-              <div className="mt-6">
-                <OrderTimeline order={o} />
-              </div>
-            </div>
-          ))}
+                <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
+                  <span>{formatDate(o.createdAt)}</span>
+                  <span>{formatMNT(o.total)}</span>
+                  {o.fileName && <span>Файл: {o.fileName}</span>}
+                </div>
+                <div className="mt-6">
+                  <OrderTimeline order={o} />
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       </div>
     </Section>

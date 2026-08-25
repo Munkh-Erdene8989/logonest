@@ -1,4 +1,7 @@
+"use client"
+
 import Link from "next/link"
+import { motion } from "motion/react"
 import { Check } from "lucide-react"
 import type { Order, OrderStatus, Product } from "@/lib/types"
 import { STATUS_LABEL, STATUS_ORDER } from "@/lib/types"
@@ -10,7 +13,7 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <Link
       href={`/products/${product.id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-ink/5"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-ink/5 motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:hover:shadow-none"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
         <ImageWithSkeleton
@@ -18,7 +21,7 @@ export function ProductCard({ product }: { product: Product }) {
           alt={product.name}
           fill
           sizes="(max-width: 768px) 100vw, 33vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          className="object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
         />
         {product.popular && (
           <span className="absolute left-3 top-3 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
@@ -40,7 +43,7 @@ export function ProductCard({ product }: { product: Product }) {
               <span className="text-sm font-normal text-muted-foreground">/{product.unit}</span>
             </div>
           </div>
-          <span className="rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors group-hover:border-primary group-hover:text-primary">
+          <span className="rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors duration-200 group-hover:border-primary group-hover:text-primary motion-reduce:transition-none">
             Үзэх
           </span>
         </div>
@@ -72,16 +75,21 @@ export function OrderTimeline({ order }: { order: Order }) {
         return (
           <li key={status} className="relative flex gap-4">
             {i < STATUS_ORDER.length - 1 && (
-              <span
-                className={cx(
-                  "absolute left-[13px] top-7 h-[calc(100%+0.5rem)] w-0.5",
-                  done && i < currentIndex ? "bg-primary" : "bg-border",
-                )}
-              />
+              <span className="absolute left-[13px] top-7 h-[calc(100%+0.5rem)] w-0.5 origin-top overflow-hidden bg-border">
+                <motion.span
+                  className="absolute inset-0 bg-primary origin-top"
+                  initial={{ scaleY: 0 }}
+                  animate={{ scaleY: done && i < currentIndex ? 1 : 0 }}
+                  transition={{ duration: 0.4, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
+                />
+              </span>
             )}
-            <span
+            <motion.span
+              initial={active ? { scale: 0.85 } : false}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.3, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
               className={cx(
-                "relative z-10 grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 transition-colors",
+                "relative z-10 grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 transition-colors duration-200 motion-reduce:transition-none",
                 done
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border bg-card text-muted-foreground",
@@ -89,7 +97,7 @@ export function OrderTimeline({ order }: { order: Order }) {
               )}
             >
               {done ? <Check className="h-4 w-4" /> : <span className="h-2 w-2 rounded-full bg-muted-foreground" />}
-            </span>
+            </motion.span>
             <div className="pb-1">
               <p className={cx("font-medium", done ? "text-foreground" : "text-muted-foreground")}>
                 {STATUS_LABEL[status]}

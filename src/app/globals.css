@@ -68,10 +68,6 @@
   --radius-sm: calc(var(--radius) - 0.45rem);
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 body {
   background-color: var(--background);
   color: var(--foreground);
@@ -145,4 +141,19 @@ body {
 }
 .animate-fade-up {
   animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  body {
+    transition: none;
+  }
+  .skeleton::after {
+    animation: none;
+  }
+  .animate-fade-up {
+    animation: none;
+  }
 }

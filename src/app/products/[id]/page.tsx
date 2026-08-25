@@ -5,6 +5,7 @@ import type { Metadata } from "next"
 import { getProduct, getProducts } from "@/lib/data"
 import { formatMNT } from "@/lib/format"
 import { ImageWithSkeleton } from "@/components/ImageWithSkeleton"
+import { Reveal } from "@/components/motion/Reveal"
 import { ProductCard } from "@/components/shared"
 import { ButtonLink, Eyebrow, Section } from "@/components/ui"
 
@@ -35,26 +36,30 @@ export default async function ProductDetailPage({
     .slice(0, 3)
 
   return (
-    <Section className="py-14 animate-fade-up">
-      <Link
-        href="/products"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary"
-      >
-        <ArrowLeft className="h-4 w-4" /> Каталог
-      </Link>
+    <Section className="py-14">
+      <Reveal from="load">
+        <Link
+          href="/products"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary"
+        >
+          <ArrowLeft className="h-4 w-4" /> Каталог
+        </Link>
+      </Reveal>
 
       <div className="mt-6 grid gap-10 lg:grid-cols-2">
-        <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-muted">
-          <ImageWithSkeleton
-            src={product.image}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 1024px) 100vw, 50vw"
-          />
-        </div>
+        <Reveal from="load">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-muted">
+            <ImageWithSkeleton
+              src={product.image}
+              alt={product.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 1024px) 100vw, 50vw"
+            />
+          </div>
+        </Reveal>
 
-        <div>
+        <Reveal from="load" delay={0.08}>
           <Eyebrow>{product.category}</Eyebrow>
           <h1 className="mt-4 font-display text-4xl font-extrabold tracking-tight">{product.name}</h1>
           <p className="mt-4 text-lg text-muted-foreground">{product.description}</p>
@@ -86,17 +91,19 @@ export default async function ProductDetailPage({
               <Calculator className="h-4 w-4" /> Үнэ тооцоолох
             </ButtonLink>
           </div>
-        </div>
+        </Reveal>
       </div>
 
       {related.length > 0 && (
         <div className="mt-20">
-          <h2 className="font-display text-2xl font-bold">Төстэй бүтээгдэхүүн</h2>
-          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <Reveal>
+            <h2 className="font-display text-2xl font-bold">Төстэй бүтээгдэхүүн</h2>
+          </Reveal>
+          <Reveal stagger={0.07} className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {related.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
-          </div>
+          </Reveal>
         </div>
       )}
     </Section>

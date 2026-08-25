@@ -17,7 +17,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 }
 
 const btnBase =
-  "inline-flex items-center justify-center gap-2 font-medium rounded-full transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]"
+  "inline-flex items-center justify-center gap-2 font-medium rounded-full transition-all duration-200 motion-reduce:transition-none motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]"
 
 const btnVariant = {
   primary:
@@ -75,7 +75,7 @@ export function Input({
       )}
       <input
         className={cx(
-          "w-full rounded-xl border border-border bg-card px-4 h-11 text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20",
+          "w-full rounded-xl border border-border bg-card px-4 h-11 text-foreground placeholder:text-muted-foreground transition-colors duration-200 motion-reduce:transition-none focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20",
           className,
         )}
         {...props}
@@ -98,7 +98,7 @@ export function Select({
       )}
       <select
         className={cx(
-          "w-full rounded-xl border border-border bg-card px-4 h-11 text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20",
+          "w-full rounded-xl border border-border bg-card px-4 h-11 text-foreground transition-colors duration-200 motion-reduce:transition-none focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20",
           className,
         )}
         {...props}
@@ -121,7 +121,7 @@ export function Textarea({
       )}
       <textarea
         className={cx(
-          "w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20",
+          "w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground placeholder:text-muted-foreground transition-colors duration-200 motion-reduce:transition-none focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20",
           className,
         )}
         {...props}

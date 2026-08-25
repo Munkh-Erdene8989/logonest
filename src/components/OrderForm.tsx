@@ -7,7 +7,9 @@ import { Check, CheckCircle2, Copy, FileUp, Package } from "lucide-react"
 import { createOrderAction } from "@/lib/actions/public"
 import { copyText, formatMNT } from "@/lib/format"
 import type { PricingType, Product } from "@/lib/types"
+import { Reveal } from "@/components/motion/Reveal"
 import { Button, ButtonLink, Eyebrow, Input, Section, Select, Textarea, cx } from "@/components/ui"
+import { AnimatePresence, motion } from "motion/react"
 
 const STEPS = ["Бүтээгдэхүүн", "Файл", "Холбоо барих", "Баталгаажуулах"]
 
@@ -86,7 +88,8 @@ export function OrderForm({
 
   if (placed) {
     return (
-      <Section className="py-20 animate-fade-up">
+      <Section className="py-20">
+        <Reveal from="load">
         <div className="mx-auto max-w-lg rounded-3xl border border-border bg-card p-8 text-center sm:p-10">
           <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-accent text-accent-foreground">
             <CheckCircle2 className="h-8 w-8" />
@@ -121,22 +124,25 @@ export function OrderForm({
             </ButtonLink>
           </div>
         </div>
+        </Reveal>
       </Section>
     )
   }
 
   return (
-    <Section className="py-14 animate-fade-up">
-      <Eyebrow>Захиалга</Eyebrow>
-      <h1 className="mt-4 font-display text-4xl font-extrabold tracking-tight">Захиалга хийх</h1>
-      <p className="mt-2 text-muted-foreground">Нэвтрэх шаардлагагүй — хэдхэн алхмаар.</p>
+    <Section className="py-14">
+      <Reveal from="load">
+        <Eyebrow>Захиалга</Eyebrow>
+        <h1 className="mt-4 font-display text-4xl font-extrabold tracking-tight">Захиалга хийх</h1>
+        <p className="mt-2 text-muted-foreground">Нэвтрэх шаардлагагүй — хэдхэн алхмаар.</p>
+      </Reveal>
 
       <div className="mt-8 flex flex-wrap items-center gap-2">
         {STEPS.map((s, i) => (
           <div key={s} className="flex items-center gap-2">
             <span
               className={cx(
-                "flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
+                "flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors duration-200 motion-reduce:transition-none",
                 i === step
                   ? "bg-primary text-primary-foreground"
                   : i < step
@@ -154,137 +160,167 @@ export function OrderForm({
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[1.5fr_1fr]">
         <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
-          {step === 0 && (
-            <div className="space-y-5">
-              {fromCalc ? (
-                <div className="rounded-xl bg-accent/40 p-4">
-                  <p className="text-sm text-muted-foreground">Тооцоолуураас</p>
-                  <p className="mt-1 font-display font-bold">{productName}</p>
-                  <p className="text-sm text-muted-foreground">{spec}</p>
-                </div>
-              ) : (
-                <>
-                  <Select
-                    label="Бүтээгдэхүүн"
-                    value={productId}
-                    onChange={(e) => setProductId(e.target.value)}
-                  >
-                    {products.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} — {formatMNT(p.basePrice)}/{p.unit}
-                      </option>
-                    ))}
-                  </Select>
-                  <Input
-                    label="Тоо ширхэг"
-                    type="number"
-                    min={1}
-                    value={qty}
-                    onChange={(e) => setQty(Math.max(1, Number(e.target.value)))}
-                  />
-                </>
-              )}
-              <Textarea
-                label="Нэмэлт тайлбар (заавал биш)"
-                rows={3}
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Онцгой хүсэлт, тэмдэглэл..."
-              />
-              <div className="flex justify-end">
-                <Button onClick={() => setStep(1)}>Үргэлжлүүлэх</Button>
-              </div>
-            </div>
-          )}
-
-          {step === 1 && (
-            <div className="space-y-5">
-              <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border py-12 text-center transition-colors hover:border-primary hover:bg-accent/20">
-                <FileUp className="h-8 w-8 text-primary" />
-                <div>
-                  <p className="font-medium">Дизайн файлаа хавсаргах</p>
-                  <p className="text-sm text-muted-foreground">PDF, AI, PSD, JPG, PNG, TIFF</p>
-                </div>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept=".pdf,.ai,.psd,.jpg,.jpeg,.png,.tif,.tiff"
-                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                />
-                {file && (
-                  <span className="mt-1 rounded-full bg-accent px-3 py-1 text-sm font-medium text-accent-foreground">
-                    {file.name}
-                  </span>
+          <AnimatePresence mode="wait" initial={false}>
+            {step === 0 && (
+              <motion.div
+                key="step-0"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5"
+              >
+                {fromCalc ? (
+                  <div className="rounded-xl bg-accent/40 p-4">
+                    <p className="text-sm text-muted-foreground">Тооцоолуураас</p>
+                    <p className="mt-1 font-display font-bold">{productName}</p>
+                    <p className="text-sm text-muted-foreground">{spec}</p>
+                  </div>
+                ) : (
+                  <>
+                    <Select
+                      label="Бүтээгдэхүүн"
+                      value={productId}
+                      onChange={(e) => setProductId(e.target.value)}
+                    >
+                      {products.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} — {formatMNT(p.basePrice)}/{p.unit}
+                        </option>
+                      ))}
+                    </Select>
+                    <Input
+                      label="Тоо ширхэг"
+                      type="number"
+                      min={1}
+                      value={qty}
+                      onChange={(e) => setQty(Math.max(1, Number(e.target.value)))}
+                    />
+                  </>
                 )}
-              </label>
-              <p className="text-sm text-muted-foreground">
-                Файл байхгүй бол алгасаж болно — манай дизайнер тантай холбогдоно.
-              </p>
-              <div className="flex justify-between">
-                <Button variant="ghost" onClick={() => setStep(0)}>Буцах</Button>
-                <Button onClick={() => setStep(2)}>Үргэлжлүүлэх</Button>
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-5">
-              <Input
-                label="Нэр *"
-                value={customer.name}
-                onChange={(e) => setCustomer({ ...customer, name: e.target.value })}
-                placeholder="Таны нэр"
-              />
-              <div className="grid gap-5 sm:grid-cols-2">
-                <Input
-                  label="Утас *"
-                  value={customer.phone}
-                  onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
-                  placeholder="99XXXXXX"
-                  hint="Захиалгаа хянахад ашиглана"
+                <Textarea
+                  label="Нэмэлт тайлбар (заавал биш)"
+                  rows={3}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Онцгой хүсэлт, тэмдэглэл..."
                 />
-                <Input
-                  label="Имэйл"
-                  type="email"
-                  value={customer.email}
-                  onChange={(e) => setCustomer({ ...customer, email: e.target.value })}
-                  placeholder="name@example.mn"
-                />
-              </div>
-              <Textarea
-                label="Хүргэлт / нэмэлт"
-                rows={2}
-                value={customer.note}
-                onChange={(e) => setCustomer({ ...customer, note: e.target.value })}
-              />
-              <div className="flex justify-between">
-                <Button variant="ghost" onClick={() => setStep(1)}>Буцах</Button>
-                <Button disabled={!canContact} onClick={() => setStep(3)}>Үргэлжлүүлэх</Button>
-              </div>
-            </div>
-          )}
+                <div className="flex justify-end">
+                  <Button onClick={() => setStep(1)}>Үргэлжлүүлэх</Button>
+                </div>
+              </motion.div>
+            )}
 
-          {step === 3 && (
-            <div className="space-y-5">
-              <h3 className="font-display text-lg font-bold">Захиалгаа шалгах</h3>
-              <dl className="divide-y divide-border rounded-xl border border-border">
-                <ConfirmRow label="Бүтээгдэхүүн" value={productName} />
-                <ConfirmRow label="Тодорхойлолт" value={spec} />
-                <ConfirmRow label="Файл" value={file?.name ?? "Хавсаргаагүй"} />
-                <ConfirmRow label="Нэр" value={customer.name} />
-                <ConfirmRow label="Утас" value={customer.phone} />
-                {customer.email && <ConfirmRow label="Имэйл" value={customer.email} />}
-                <ConfirmRow label="Нийт дүн" value={formatMNT(total)} strong />
-              </dl>
-              {error && <p className="text-sm text-primary">{error}</p>}
-              <div className="flex justify-between">
-                <Button variant="ghost" onClick={() => setStep(2)}>Буцах</Button>
-                <Button onClick={place} disabled={submitting}>
-                  {submitting ? "Илгээж байна..." : "Захиалга баталгаажуулах"}
-                </Button>
-              </div>
-            </div>
-          )}
+            {step === 1 && (
+              <motion.div
+                key="step-1"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5"
+              >
+                <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border py-12 text-center transition-colors duration-200 hover:border-primary hover:bg-accent/20 motion-reduce:transition-none">
+                  <FileUp className="h-8 w-8 text-primary" />
+                  <div>
+                    <p className="font-medium">Дизайн файлаа хавсаргах</p>
+                    <p className="text-sm text-muted-foreground">PDF, AI, PSD, JPG, PNG, TIFF</p>
+                  </div>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.ai,.psd,.jpg,.jpeg,.png,.tif,.tiff"
+                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  />
+                  {file && (
+                    <span className="mt-1 rounded-full bg-accent px-3 py-1 text-sm font-medium text-accent-foreground">
+                      {file.name}
+                    </span>
+                  )}
+                </label>
+                <p className="text-sm text-muted-foreground">
+                  Файл байхгүй бол алгасаж болно — манай дизайнер тантай холбогдоно.
+                </p>
+                <div className="flex justify-between">
+                  <Button variant="ghost" onClick={() => setStep(0)}>Буцах</Button>
+                  <Button onClick={() => setStep(2)}>Үргэлжлүүлэх</Button>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 2 && (
+              <motion.div
+                key="step-2"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5"
+              >
+                <Input
+                  label="Нэр *"
+                  value={customer.name}
+                  onChange={(e) => setCustomer({ ...customer, name: e.target.value })}
+                  placeholder="Таны нэр"
+                />
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <Input
+                    label="Утас *"
+                    value={customer.phone}
+                    onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
+                    placeholder="99XXXXXX"
+                    hint="Захиалгаа хянахад ашиглана"
+                  />
+                  <Input
+                    label="Имэйл"
+                    type="email"
+                    value={customer.email}
+                    onChange={(e) => setCustomer({ ...customer, email: e.target.value })}
+                    placeholder="name@example.mn"
+                  />
+                </div>
+                <Textarea
+                  label="Хүргэлт / нэмэлт"
+                  rows={2}
+                  value={customer.note}
+                  onChange={(e) => setCustomer({ ...customer, note: e.target.value })}
+                />
+                <div className="flex justify-between">
+                  <Button variant="ghost" onClick={() => setStep(1)}>Буцах</Button>
+                  <Button disabled={!canContact} onClick={() => setStep(3)}>Үргэлжлүүлэх</Button>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 3 && (
+              <motion.div
+                key="step-3"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-5"
+              >
+                <h3 className="font-display text-lg font-bold">Захиалгаа шалгах</h3>
+                <dl className="divide-y divide-border rounded-xl border border-border">
+                  <ConfirmRow label="Бүтээгдэхүүн" value={productName} />
+                  <ConfirmRow label="Тодорхойлолт" value={spec} />
+                  <ConfirmRow label="Файл" value={file?.name ?? "Хавсаргаагүй"} />
+                  <ConfirmRow label="Нэр" value={customer.name} />
+                  <ConfirmRow label="Утас" value={customer.phone} />
+                  {customer.email && <ConfirmRow label="Имэйл" value={customer.email} />}
+                  <ConfirmRow label="Нийт дүн" value={formatMNT(total)} strong />
+                </dl>
+                {error && <p className="text-sm text-primary">{error}</p>}
+                <div className="flex justify-between">
+                  <Button variant="ghost" onClick={() => setStep(2)}>Буцах</Button>
+                  <Button onClick={place} disabled={submitting}>
+                    {submitting ? "Илгээж байна..." : "Захиалга баталгаажуулах"}
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <aside className="lg:sticky lg:top-24 lg:self-start">

@@ -5,6 +5,8 @@ import { ArrowRight, Info } from "lucide-react"
 import { calculatePrice, type CalcInput } from "@/lib/pricing"
 import { formatMNT } from "@/lib/format"
 import type { PricingType } from "@/lib/types"
+import { AnimatedPrice } from "@/components/motion/AnimatedPrice"
+import { Reveal } from "@/components/motion/Reveal"
 import { ButtonLink, Eyebrow, Section, Select, cx } from "@/components/ui"
 
 export function CalculatorForm({ pricing }: { pricing: PricingType[] }) {
@@ -38,16 +40,18 @@ export function CalculatorForm({ pricing }: { pricing: PricingType[] }) {
   const orderQuery = `/order?calc=1&type=${typeId}&finish=${finishId}&mat=${materialId ?? ""}&w=${width}&h=${height}&qty=${qty}&total=${Math.round(result.total)}`
 
   return (
-    <Section className="py-14 animate-fade-up">
-      <Eyebrow>Тооцоолуур</Eyebrow>
-      <h1 className="mt-4 font-display text-4xl font-extrabold tracking-tight">
-        Хэвлэлийн үнэ тооцоолуур
-      </h1>
-      <p className="mt-3 max-w-xl text-muted-foreground">
-        Хэвлэлийн төрлөө сонгож, хэмжээ болон тоо ширхгээ оруулбал үнэ шууд бодогдоно.
-      </p>
+    <Section className="py-14">
+      <Reveal from="load">
+        <Eyebrow>Тооцоолуур</Eyebrow>
+        <h1 className="mt-4 font-display text-4xl font-extrabold tracking-tight">
+          Хэвлэлийн үнэ тооцоолуур
+        </h1>
+        <p className="mt-3 max-w-xl text-muted-foreground">
+          Хэвлэлийн төрлөө сонгож, хэмжээ болон тоо ширхгээ оруулбал үнэ шууд бодогдоно.
+        </p>
+      </Reveal>
 
-      <div className="mt-10 grid gap-8 lg:grid-cols-[1.4fr_1fr]">
+      <Reveal className="mt-10 grid gap-8 lg:grid-cols-[1.4fr_1fr]">
         <div className="space-y-6 rounded-2xl border border-border bg-card p-6 sm:p-8">
           <div>
             <span className="mb-2.5 block text-sm font-medium">Хэвлэлийн төрөл</span>
@@ -57,7 +61,7 @@ export function CalculatorForm({ pricing }: { pricing: PricingType[] }) {
                   key={t.id}
                   onClick={() => switchType(t.id)}
                   className={cx(
-                    "rounded-xl border p-4 text-left transition-colors",
+                    "rounded-xl border p-4 text-left transition-colors duration-200 motion-reduce:transition-none",
                     typeId === t.id
                       ? "border-primary bg-accent/40"
                       : "border-border hover:border-primary/40",
@@ -114,7 +118,7 @@ export function CalculatorForm({ pricing }: { pricing: PricingType[] }) {
               Тооцоолсон үнэ
             </span>
             <div className="mt-2 font-display text-4xl font-extrabold text-primary">
-              {result.valid ? formatMNT(result.total) : "—"}
+              <AnimatedPrice value={result.total} valid={result.valid} />
             </div>
 
             <dl className="mt-6 space-y-3 border-t border-white/10 pt-6 text-sm">
@@ -139,7 +143,7 @@ export function CalculatorForm({ pricing }: { pricing: PricingType[] }) {
             хамаарч өөрчлөгдөж болно.
           </p>
         </div>
-      </div>
+      </Reveal>
     </Section>
   )
 }
@@ -163,7 +167,7 @@ function NumberField({
         min={min}
         value={value}
         onChange={(e) => onChange(Math.max(min, Number(e.target.value)))}
-        className="h-11 w-full rounded-xl border border-border bg-card px-4 font-mono focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+        className="h-11 w-full rounded-xl border border-border bg-card px-4 font-mono transition-colors duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 motion-reduce:transition-none"
       />
     </label>
   )

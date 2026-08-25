@@ -38,8 +38,10 @@ import { STATUS_LABEL, STATUS_ORDER } from "@/lib/types"
 import type { Message, NewsItem, Order, OrderStatus, PricingType, Product } from "@/lib/types"
 import { formatDate, formatMNT } from "@/lib/format"
 import { ImageWithSkeleton } from "@/components/ImageWithSkeleton"
+import { CountUp } from "@/components/motion/CountUp"
 import { StatusBadge } from "@/components/shared"
 import { Button, Input, Textarea, cx } from "@/components/ui"
+import { AnimatePresence, motion } from "motion/react"
 
 type Tab = "overview" | "orders" | "products" | "pricing" | "messages" | "news"
 
@@ -89,7 +91,7 @@ export function AdminDashboard({
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 className={cx(
-                  "flex shrink-0 items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors",
+                  "flex shrink-0 items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors duration-200 motion-reduce:transition-none",
                   tab === t.id
                     ? "bg-primary text-primary-foreground"
                     : "text-foreground/70 hover:bg-secondary",
@@ -115,12 +117,22 @@ export function AdminDashboard({
       </aside>
 
       <main className="min-w-0 flex-1">
-        {tab === "overview" && <Overview orders={orders} products={products} messages={messages} />}
-        {tab === "orders" && <Orders orders={orders} />}
-        {tab === "products" && <ProductsAdmin products={products} />}
-        {tab === "pricing" && <PricingAdmin pricing={pricing} />}
-        {tab === "messages" && <Messages messages={messages} />}
-        {tab === "news" && <NewsAdmin news={news} />}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            {tab === "overview" && <Overview orders={orders} products={products} messages={messages} />}
+            {tab === "orders" && <Orders orders={orders} />}
+            {tab === "products" && <ProductsAdmin products={products} />}
+            {tab === "pricing" && <PricingAdmin pricing={pricing} />}
+            {tab === "messages" && <Messages messages={messages} />}
+            {tab === "news" && <NewsAdmin news={news} />}
+          </motion.div>
+        </AnimatePresence>
       </main>
     </div>
   )
@@ -156,10 +168,10 @@ function Overview({
       <SectionTitle title="Тойм" subtitle="Захиалга, орлогын ерөнхий үзүүлэлт" />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat icon={ClipboardList} label="Нийт захиалга" value={String(orders.length)} />
-        <Stat icon={TrendingUp} label="Идэвхтэй" value={String(active)} />
-        <Stat icon={Package} label="Бүтээгдэхүүн" value={String(products.length)} />
-        <Stat icon={Mail} label="Нийт орлого" value={formatMNT(revenue)} />
+        <Stat icon={ClipboardList} label="Нийт захиалга" to={orders.length} />
+        <Stat icon={TrendingUp} label="Идэвхтэй" to={active} />
+        <Stat icon={Package} label="Бүтээгдэхүүн" to={products.length} />
+        <Stat icon={Mail} label="Нийт орлого" to={revenue} format={formatMNT} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -571,18 +583,22 @@ function SectionTitle({ title, subtitle }: { title: string; subtitle?: string })
 function Stat({
   icon: Icon,
   label,
-  value,
+  to,
+  format,
 }: {
   icon: React.ComponentType<{ className?: string }>
   label: string
-  value: string
+  to: number
+  format?: (n: number) => string
 }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
       <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-accent-foreground">
         <Icon className="h-5 w-5" />
       </span>
-      <div className="mt-3 font-display text-2xl font-extrabold">{value}</div>
+      <div className="mt-3 font-display text-2xl font-extrabold">
+        <CountUp to={to} format={format} />
+      </div>
       <div className="text-sm text-muted-foreground">{label}</div>
     </div>
   )
