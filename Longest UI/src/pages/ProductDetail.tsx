@@ -1,0 +1,103 @@
+import { Link, useParams } from "react-router-dom"
+import { ArrowLeft, Calculator, Check, ShoppingCart } from "lucide-react"
+import { useStore } from "../lib/store"
+import { useFakeLoading } from "../lib/useLoading"
+import { formatMNT } from "../lib/format"
+import { ProductCard } from "../components/shared"
+import { Skeleton } from "../components/Skeleton"
+import { ButtonLink, Eyebrow, Section } from "../components/ui"
+
+export default function ProductDetail() {
+  const { id } = useParams()
+  const { products } = useStore()
+  const loading = useFakeLoading(500, [id])
+  const product = products.find((p) => p.id === id)
+
+  if (loading) {
+    return (
+      <Section className="py-14">
+        <div className="grid gap-10 lg:grid-cols-2">
+          <Skeleton className="aspect-[4/3] w-full rounded-2xl" />
+          <div className="space-y-4">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-10 w-2/3" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-12 w-40" />
+          </div>
+        </div>
+      </Section>
+    )
+  }
+
+  if (!product) {
+    return (
+      <Section className="py-24 text-center">
+        <h1 className="font-display text-2xl font-bold">Бүтээгдэхүүн олдсонгүй</h1>
+        <ButtonLink to="/products" className="mt-6" variant="outline">
+          Каталог руу буцах
+        </ButtonLink>
+      </Section>
+    )
+  }
+
+  const related = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 3)
+
+  return (
+    <Section className="py-14 animate-fade-up">
+      <Link to="/products" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
+        <ArrowLeft className="h-4 w-4" /> Каталог
+      </Link>
+
+      <div className="mt-6 grid gap-10 lg:grid-cols-2">
+        <div className="overflow-hidden rounded-2xl border border-border bg-muted">
+          <img src={product.image} alt={product.name} className="aspect-[4/3] w-full object-cover" />
+        </div>
+
+        <div>
+          <Eyebrow>{product.category}</Eyebrow>
+          <h1 className="mt-4 font-display text-4xl font-extrabold tracking-tight">{product.name}</h1>
+          <p className="mt-4 text-lg text-muted-foreground">{product.description}</p>
+
+          <div className="mt-6 rounded-2xl border border-border bg-secondary/50 p-5">
+            <span className="text-sm text-muted-foreground">Эхлэх үнэ</span>
+            <div className="font-display text-3xl font-extrabold text-primary">
+              {formatMNT(product.basePrice)}
+              <span className="text-base font-normal text-muted-foreground"> / {product.unit}</span>
+            </div>
+          </div>
+
+          <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+            {product.features.map((f) => (
+              <li key={f} className="flex items-center gap-2.5 text-sm">
+                <span className="grid h-5 w-5 place-items-center rounded-full bg-accent text-accent-foreground">
+                  <Check className="h-3 w-3" />
+                </span>
+                {f}
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <ButtonLink to={`/order?product=${product.id}`} size="lg">
+              <ShoppingCart className="h-4 w-4" /> Захиалах
+            </ButtonLink>
+            <ButtonLink to="/calculator" size="lg" variant="outline">
+              <Calculator className="h-4 w-4" /> Үнэ тооцоолох
+            </ButtonLink>
+          </div>
+        </div>
+      </div>
+
+      {related.length > 0 && (
+        <div className="mt-20">
+          <h2 className="font-display text-2xl font-bold">Төстэй бүтээгдэхүүн</h2>
+          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {related.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        </div>
+      )}
+    </Section>
+  )
+}

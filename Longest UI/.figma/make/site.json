@@ -1,0 +1,11 @@
+{
+  "title": "Logonest тестинг",
+  "description": "Provides a product catalog, order placement, and printing cost calculator with order tracking via phone or email, plus a company info landing page.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

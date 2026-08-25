@@ -1,0 +1,6 @@
+Longest UI
+.env
+.env*.local
+serviceAccount.json
+.next
+node_modules

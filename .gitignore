@@ -1,0 +1,10 @@
+node_modules
+.next
+out
+.vercel
+.env
+.env*.local
+*.log
+serviceAccount.json
+.DS_Store
+next-env.d.ts
