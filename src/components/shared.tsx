@@ -1,9 +1,9 @@
 import Link from "next/link"
-import Image from "next/image"
 import { Check } from "lucide-react"
 import type { Order, OrderStatus, Product } from "@/lib/types"
 import { STATUS_LABEL, STATUS_ORDER } from "@/lib/types"
 import { formatDate, formatMNT } from "@/lib/format"
+import { ImageWithSkeleton } from "./ImageWithSkeleton"
 import { Badge, cx } from "./ui"
 
 export function ProductCard({ product }: { product: Product }) {
@@ -13,7 +13,7 @@ export function ProductCard({ product }: { product: Product }) {
       className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-ink/5"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-        <Image
+        <ImageWithSkeleton
           src={product.image}
           alt={product.name}
           fill

@@ -1,10 +1,10 @@
 import Link from "next/link"
-import Image from "next/image"
 import { ArrowLeft, Calculator, Check, ShoppingCart } from "lucide-react"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { getProduct, getProducts } from "@/lib/data"
 import { formatMNT } from "@/lib/format"
+import { ImageWithSkeleton } from "@/components/ImageWithSkeleton"
 import { ProductCard } from "@/components/shared"
 import { ButtonLink, Eyebrow, Section } from "@/components/ui"
 
@@ -45,7 +45,7 @@ export default async function ProductDetailPage({
 
       <div className="mt-6 grid gap-10 lg:grid-cols-2">
         <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-muted">
-          <Image
+          <ImageWithSkeleton
             src={product.image}
             alt={product.name}
             fill

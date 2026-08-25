@@ -1,5 +1,4 @@
 import Link from "next/link"
-import Image from "next/image"
 import {
   ArrowRight,
   Calculator,
@@ -11,6 +10,7 @@ import {
 } from "lucide-react"
 import { COMPANY, STATS, TESTIMONIALS } from "@/lib/company"
 import { getProducts } from "@/lib/data"
+import { ImageWithSkeleton } from "@/components/ImageWithSkeleton"
 import { ProductCard } from "@/components/shared"
 import { ButtonLink, Eyebrow, Section } from "@/components/ui"
 
@@ -78,13 +78,13 @@ export default async function LandingPage() {
           </div>
 
           <div className="relative">
-            <div className="overflow-hidden rounded-3xl border border-border bg-muted shadow-2xl shadow-ink/10">
-              <Image
+            <div className="relative aspect-[5/4] overflow-hidden rounded-3xl border border-border bg-muted shadow-2xl shadow-ink/10">
+              <ImageWithSkeleton
                 src="https://images.unsplash.com/photo-1503694978374-8a2fa686963a?w=1200&h=1000&fit=crop&auto=format"
                 alt="Хэвлэлийн машин ажиллаж байгаа нь"
-                width={1200}
-                height={1000}
-                className="aspect-[5/4] w-full object-cover"
+                fill
+                sizes="(max-width: 1024px) 100vw, 45vw"
+                className="object-cover"
                 priority
               />
             </div>

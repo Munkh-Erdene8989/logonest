@@ -37,6 +37,7 @@ import {
 import { STATUS_LABEL, STATUS_ORDER } from "@/lib/types"
 import type { Message, NewsItem, Order, OrderStatus, PricingType, Product } from "@/lib/types"
 import { formatDate, formatMNT } from "@/lib/format"
+import { ImageWithSkeleton } from "@/components/ImageWithSkeleton"
 import { StatusBadge } from "@/components/shared"
 import { Button, Input, Textarea, cx } from "@/components/ui"
 
@@ -349,8 +350,15 @@ function ProductsAdmin({ products }: { products: Product[] }) {
       <div className="grid gap-3">
         {products.map((p) => (
           <div key={p.id} className="flex items-center gap-4 rounded-2xl border border-border bg-card p-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={p.image} alt={p.name} className="h-16 w-16 shrink-0 rounded-xl object-cover" />
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
+              <ImageWithSkeleton
+                src={p.image}
+                alt={p.name}
+                fill
+                sizes="64px"
+                className="object-cover"
+              />
+            </div>
             <div className="min-w-0 flex-1">
               <div className="font-display font-bold">{p.name}</div>
               <div className="truncate text-sm text-muted-foreground">{p.category} · {formatMNT(p.basePrice)}/{p.unit}</div>
