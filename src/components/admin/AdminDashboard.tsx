@@ -40,6 +40,7 @@ import { STATUS_LABEL, STATUS_ORDER } from "@/lib/types"
 import type { Message, NewsItem, Order, OrderStatus, PricingType, Product } from "@/lib/types"
 import { formatDate, formatMNT } from "@/lib/format"
 import { ImageWithSkeleton } from "@/components/ImageWithSkeleton"
+import { ImageCropModal } from "@/components/admin/ImageCropModal"
 import { CountUp } from "@/components/motion/CountUp"
 import { StatusBadge } from "@/components/shared"
 import { Button, Input, Textarea, cx } from "@/components/ui"
@@ -331,13 +332,11 @@ const EMPTY_PRODUCT: Product = {
   features: [],
 }
 
-const IMAGE_EXT = new Set(["jpg", "jpeg", "png", "webp"])
-const MAX_IMAGE = 5 * 1024 * 1024
-
 function ProductsAdmin({ products }: { products: Product[] }) {
   const [editing, setEditing] = useState<Product | null>(null)
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
+  const [cropSrc, setCropSrc] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [error, setError] = useState("")
@@ -358,21 +357,24 @@ function ProductsAdmin({ products }: { products: Product[] }) {
     setEditing({ ...product })
     setFile(null)
     setError("")
+    if (cropSrc) URL.revokeObjectURL(cropSrc)
+    setCropSrc(null)
   }
 
   function onFileChange(next: File | null) {
     if (!next) return
-    const ext = next.name.split(".").pop()?.toLowerCase() ?? ""
-    if (!IMAGE_EXT.has(ext)) {
+    if (!next.type.startsWith("image/")) {
       setError("Зөвшөөрөгдсөн формат: JPG, PNG, WebP.")
       return
     }
-    if (next.size > MAX_IMAGE) {
-      setError("Зураг 5MB-аас хэтэрч болохгүй.")
-      return
-    }
     setError("")
-    setFile(next)
+    if (cropSrc) URL.revokeObjectURL(cropSrc)
+    setCropSrc(URL.createObjectURL(next))
+  }
+
+  function closeCrop() {
+    if (cropSrc) URL.revokeObjectURL(cropSrc)
+    setCropSrc(null)
   }
 
   async function save() {
@@ -385,7 +387,10 @@ function ProductsAdmin({ products }: { products: Product[] }) {
     setSaving(true)
     setError("")
     try {
-      const result = await saveProductAction(editing, file)
+      const fd = new FormData()
+      fd.set("product", JSON.stringify(editing))
+      if (file) fd.set("image", file)
+      const result = await saveProductAction(fd)
       if (result && !result.ok) {
         setError(result.error)
         return
@@ -432,7 +437,7 @@ function ProductsAdmin({ products }: { products: Product[] }) {
             }}
           >
             {previewSrc ? (
-              <div className="relative h-40 w-full max-w-xs overflow-hidden rounded-xl bg-muted sm:h-48">
+              <div className="relative aspect-[4/3] w-full max-w-xs overflow-hidden rounded-xl bg-muted">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={previewSrc} alt="" className="h-full w-full object-cover" />
               </div>
@@ -441,7 +446,7 @@ function ProductsAdmin({ products }: { products: Product[] }) {
             )}
             <div>
               <p className="font-medium">{previewSrc ? "Зураг солих" : "Зураг оруулах"}</p>
-              <p className="text-sm text-muted-foreground">JPG, PNG, WebP · 5MB хүртэл · товшиж сонгоно уу</p>
+              <p className="text-sm text-muted-foreground">JPG, PNG, WebP · 4:3 таслах · товшиж сонгоно уу</p>
             </div>
             {file && (
               <span className="rounded-full bg-accent px-3 py-1 text-sm font-medium text-accent-foreground">
@@ -452,7 +457,10 @@ function ProductsAdmin({ products }: { products: Product[] }) {
               type="file"
               className="hidden"
               accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-              onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
+              onChange={(e) => {
+                onFileChange(e.target.files?.[0] ?? null)
+                e.target.value = ""
+              }}
             />
           </label>
 
@@ -496,6 +504,7 @@ function ProductsAdmin({ products }: { products: Product[] }) {
               variant="ghost"
               disabled={saving}
               onClick={() => {
+                closeCrop()
                 setEditing(null)
                 setFile(null)
                 setError("")
@@ -505,6 +514,17 @@ function ProductsAdmin({ products }: { products: Product[] }) {
             </Button>
           </div>
         </div>
+      )}
+
+      {cropSrc && (
+        <ImageCropModal
+          src={cropSrc}
+          onCancel={closeCrop}
+          onConfirm={(cropped) => {
+            closeCrop()
+            setFile(cropped)
+          }}
+        />
       )}
 
       <div className="grid gap-3">

@@ -3,13 +3,23 @@ import { getAuth } from "firebase-admin/auth"
 import { getFirestore } from "firebase-admin/firestore"
 import { getStorage } from "firebase-admin/storage"
 
+function storageBucketName() {
+  const project = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+  const raw =
+    process.env.FIREBASE_STORAGE_BUCKET ||
+    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+  if (raw && !raw.endsWith(".firebasestorage.app") && !raw.endsWith(".appspot.com")) {
+    return raw
+  }
+  if (project) return `${project}-media`
+  return raw || undefined
+}
+
 function getAdminApp(): App {
   const existing = getApps()[0]
   if (existing) return existing
 
-  const bucket =
-    process.env.FIREBASE_STORAGE_BUCKET ||
-    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+  const bucket = storageBucketName()
 
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT
   if (raw) {
@@ -44,7 +54,8 @@ export function adminAuth() {
 }
 
 export function adminBucket() {
-  return getStorage(getAdminApp()).bucket()
+  const name = storageBucketName()
+  return name ? getStorage(getAdminApp()).bucket(name) : getStorage(getAdminApp()).bucket()
 }
 
 export const SESSION_COOKIE = "lg_session"
