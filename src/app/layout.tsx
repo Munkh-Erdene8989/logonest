@@ -29,11 +29,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="mn" className={`${golos.variable} ${jetbrains.variable}`} suppressHydrationWarning>
+    <html lang="mn" className={`dark ${golos.variable} ${jetbrains.variable}`} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=JSON.parse(localStorage.getItem('hg_theme')||'"light"');if(t==='dark')document.documentElement.classList.add('dark')}catch(e){}`,
+            __html: `try{var t=JSON.parse(localStorage.getItem('hg_theme')||'"dark"');document.documentElement.classList.toggle('dark',t==='dark')}catch(e){}`,
           }}
         />
       </head>

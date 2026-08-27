@@ -21,12 +21,12 @@ function isSportPath(pathname: string) {
 }
 
 function ThemeToggle({ light }: { light?: boolean }) {
-  const [mode, setMode] = useState<"light" | "dark">("light")
+  const [mode, setMode] = useState<"light" | "dark">("dark")
 
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem("hg_theme")
-      const stored = raw ? (JSON.parse(raw) as "light" | "dark") : "light"
+      const stored = raw ? (JSON.parse(raw) as "light" | "dark") : "dark"
       setMode(stored)
       document.documentElement.classList.toggle("dark", stored === "dark")
     } catch {

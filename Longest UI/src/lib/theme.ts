@@ -5,7 +5,7 @@ export type ThemeMode = "light" | "dark"
 
 // Гэрэл/харанхуй горим — <html> дээр .dark класс тавьж, localStorage-д хадгална.
 export function useTheme() {
-  const [mode, setMode] = usePersistentState<ThemeMode>("hg_theme", "light")
+  const [mode, setMode] = usePersistentState<ThemeMode>("hg_theme", "dark")
 
   useEffect(() => {
     const root = document.documentElement
