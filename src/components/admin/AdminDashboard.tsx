@@ -75,7 +75,7 @@ export function AdminDashboard({
   const unread = messages.filter((m) => !m.read).length
 
   async function logout() {
-    await fetch("/api/auth/session", { method: "DELETE" })
+    await fetch("/api/auth/session", { method: "DELETE", credentials: "include" })
     router.push("/admin/login")
     router.refresh()
   }

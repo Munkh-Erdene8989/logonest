@@ -42,7 +42,6 @@ export function Footer() {
           <ul className="mt-4 space-y-2.5 text-sm text-white/70">
             <li><Link href="/news" className="hover:text-primary">Мэдээ, урамшуулал</Link></li>
             <li><Link href="/contact" className="hover:text-primary">Холбоо барих</Link></li>
-            <li><Link href="/admin" className="hover:text-primary">Админ нэвтрэх</Link></li>
           </ul>
         </div>
 

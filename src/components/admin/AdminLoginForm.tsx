@@ -27,13 +27,25 @@ export function AdminLoginForm() {
       const res = await fetch("/api/auth/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ idToken }),
       })
       if (!res.ok) throw new Error("session")
       router.replace("/admin")
       router.refresh()
-    } catch {
-      setErr("Имэйл эсвэл нууц үг буруу байна.")
+    } catch (e) {
+      const code = typeof e === "object" && e && "code" in e ? String((e as { code: string }).code) : ""
+      if (code === "auth/unauthorized-domain") {
+        setErr("Энэ домэйнд нэвтрэлт зөвшөөрөгдөөгүй байна.")
+      } else if (code === "auth/too-many-requests") {
+        setErr("Хэт олон оролдлого. Түр хүлээгээд дахин оролдоно уу.")
+      } else if (code === "auth/network-request-failed") {
+        setErr("Сүлжээний алдаа. Интернэтээ шалгаад дахин оролдоно уу.")
+      } else if (e instanceof Error && e.message === "session") {
+        setErr("Нэвтрэлт амжилттай боловч сесс үүсгэж чадсангүй. Дахин оролдоно уу.")
+      } else {
+        setErr("Имэйл эсвэл нууц үг буруу байна.")
+      }
       setLoading(false)
     }
   }

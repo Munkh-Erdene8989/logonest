@@ -11,21 +11,33 @@ export async function POST(req: Request) {
       expiresIn: SESSION_EXPIRES_MS,
     })
     const res = NextResponse.json({ ok: true })
-    res.cookies.set(SESSION_COOKIE, sessionCookie, {
+    const secure = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL)
+    res.cookies.set({
+      name: SESSION_COOKIE,
+      value: sessionCookie,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure,
       sameSite: "lax",
       maxAge: SESSION_EXPIRES_MS / 1000,
       path: "/",
     })
     return res
-  } catch {
+  } catch (err) {
+    console.error("createSessionCookie failed", err)
     return NextResponse.json({ error: "Invalid token" }, { status: 401 })
   }
 }
 
 export async function DELETE() {
   const res = NextResponse.json({ ok: true })
-  res.cookies.set(SESSION_COOKIE, "", { httpOnly: true, maxAge: 0, path: "/" })
+  res.cookies.set({
+    name: SESSION_COOKIE,
+    value: "",
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL),
+    sameSite: "lax",
+    maxAge: 0,
+    path: "/",
+  })
   return res
 }
