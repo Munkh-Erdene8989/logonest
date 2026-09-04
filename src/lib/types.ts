@@ -22,6 +22,7 @@ export type PricingType = {
   name: string
   description: string
   mode: "area" | "unit"
+  productId?: string
   basePricePerM2?: number
   basePricePerUnit?: number
   materials?: PricingMaterial[]

@@ -37,7 +37,8 @@ export function CalculatorForm({ pricing }: { pricing: PricingType[] }) {
     setQty(t?.mode === "unit" ? 500 : 1)
   }
 
-  const orderQuery = `/order?calc=1&type=${typeId}&finish=${finishId}&mat=${materialId ?? ""}&w=${width}&h=${height}&qty=${qty}&total=${Math.round(result.total)}`
+  const productParam = type?.productId ? `&product=${encodeURIComponent(type.productId)}` : ""
+  const orderQuery = `/order?calc=1&type=${typeId}&finish=${finishId}&mat=${materialId ?? ""}&w=${width}&h=${height}&qty=${qty}&total=${Math.round(result.total)}${productParam}`
 
   return (
     <Section className="py-14">
@@ -51,6 +52,11 @@ export function CalculatorForm({ pricing }: { pricing: PricingType[] }) {
         </p>
       </Reveal>
 
+      {pricing.length === 0 ? (
+        <p className="mt-10 rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground">
+          Тооцоолуурын төрөл тохируулаагүй байна.
+        </p>
+      ) : (
       <Reveal className="mt-10 grid gap-8 lg:grid-cols-[1.4fr_1fr]">
         <div className="space-y-6 rounded-2xl border border-border bg-card p-6 sm:p-8">
           <div>
@@ -144,6 +150,7 @@ export function CalculatorForm({ pricing }: { pricing: PricingType[] }) {
           </p>
         </div>
       </Reveal>
+      )}
     </Section>
   )
 }

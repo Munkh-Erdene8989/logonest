@@ -112,9 +112,38 @@ export async function deleteProductAction(id: string) {
 
 export async function updatePricingAction(pricing: PricingType[]) {
   await requireAdmin()
+  const col = adminDb().collection("pricing")
+  const existing = await col.get()
+  const keep = new Set(pricing.map((p) => p.id).filter(Boolean))
   const batch = adminDb().batch()
   for (const p of pricing) {
-    batch.set(adminDb().collection("pricing").doc(p.id), p)
+    if (!p.id || !p.name?.trim()) continue
+    const payload: Record<string, unknown> = {
+      id: p.id,
+      name: p.name.trim(),
+      description: p.description?.trim() ?? "",
+      mode: p.mode === "unit" ? "unit" : "area",
+      finishes: (p.finishes ?? []).map((f) => ({
+        id: String(f.id),
+        name: String(f.name ?? ""),
+        multiplier: Number(f.multiplier ?? 1),
+      })),
+    }
+    if (p.productId) payload.productId = p.productId
+    if (payload.mode === "unit") {
+      payload.basePricePerUnit = Number(p.basePricePerUnit ?? 0)
+      payload.materials = []
+    } else {
+      payload.materials = (p.materials ?? []).map((m) => ({
+        id: String(m.id),
+        name: String(m.name ?? ""),
+        pricePerM2: Number(m.pricePerM2 ?? 0),
+      }))
+    }
+    batch.set(col.doc(p.id), payload)
+  }
+  for (const doc of existing.docs) {
+    if (!keep.has(doc.id)) batch.delete(doc.ref)
   }
   await batch.commit()
   revalidateAll()

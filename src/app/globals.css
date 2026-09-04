@@ -2,27 +2,9 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-:root {
-  --background: #ffffff;
-  --foreground: #0b0d10;
-  --card: #ffffff;
-  --card-foreground: #0b0d10;
-  --primary: #08cb00;
-  --primary-foreground: #06180a;
-  --secondary: #f3f5f4;
-  --secondary-foreground: #0b0d10;
-  --muted: #f6f8f7;
-  --muted-foreground: #6b7280;
-  --accent: #e6fbe6;
-  --accent-foreground: #067a00;
-  --border: #e7eae8;
-  --ring: #08cb00;
-  --radius: 0.9rem;
-  --ink: #0b0d10;
-  --ink-foreground: #ffffff;
-}
-
+:root,
 .dark {
+  color-scheme: dark;
   --background: #0b0e0d;
   --foreground: #f1f4f2;
   --card: #14181a;
@@ -37,8 +19,29 @@
   --accent-foreground: #5fe37f;
   --border: #262c2a;
   --ring: #08cb00;
+  --radius: 0.9rem;
   --ink: #05100a;
   --ink-foreground: #f1f4f2;
+}
+
+html:not(.dark) {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #0b0d10;
+  --card: #ffffff;
+  --card-foreground: #0b0d10;
+  --primary: #08cb00;
+  --primary-foreground: #06180a;
+  --secondary: #f3f5f4;
+  --secondary-foreground: #0b0d10;
+  --muted: #f6f8f7;
+  --muted-foreground: #6b7280;
+  --accent: #e6fbe6;
+  --accent-foreground: #067a00;
+  --border: #e7eae8;
+  --ring: #08cb00;
+  --ink: #0b0d10;
+  --ink-foreground: #ffffff;
 }
 
 @theme inline {
@@ -68,13 +71,16 @@
   --radius-sm: calc(var(--radius) - 0.45rem);
 }
 
+html {
+  background-color: var(--background);
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 ::selection {
@@ -184,9 +190,6 @@ html.sport-studio body {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
-  }
-  body {
-    transition: none;
   }
   .skeleton::after {
     animation: none;

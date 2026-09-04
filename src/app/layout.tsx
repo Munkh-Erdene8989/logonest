@@ -33,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=JSON.parse(localStorage.getItem('hg_theme')||'"dark"');document.documentElement.classList.toggle('dark',t==='dark')}catch(e){}`,
+            __html: `try{var t=JSON.parse(localStorage.getItem('hg_theme')||'"dark"');var d=t==='dark';document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light'}catch(e){}`,
           }}
         />
       </head>

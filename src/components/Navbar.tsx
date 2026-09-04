@@ -4,8 +4,9 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "motion/react"
-import { Menu, Moon, Search, Sun, X } from "lucide-react"
+import { Menu, Search, X } from "lucide-react"
 import { Logo } from "./Logo"
+import { ThemeToggle } from "./ThemeToggle"
 import { ButtonLink, cx } from "./ui"
 
 const LINKS = [
@@ -18,54 +19,6 @@ const LINKS = [
 
 function isSportPath(pathname: string) {
   return pathname === "/sport" || pathname.startsWith("/sport/")
-}
-
-function ThemeToggle({ light }: { light?: boolean }) {
-  const [mode, setMode] = useState<"light" | "dark">("dark")
-
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem("hg_theme")
-      const stored = raw ? (JSON.parse(raw) as "light" | "dark") : "dark"
-      setMode(stored)
-      document.documentElement.classList.toggle("dark", stored === "dark")
-    } catch {
-      /* ignore */
-    }
-  }, [])
-
-  function toggle() {
-    const next = mode === "dark" ? "light" : "dark"
-    setMode(next)
-    document.documentElement.classList.toggle("dark", next === "dark")
-    window.localStorage.setItem("hg_theme", JSON.stringify(next))
-  }
-
-  return (
-    <button
-      onClick={toggle}
-      className={cx(
-        "grid h-10 w-10 place-items-center rounded-full transition-colors duration-200 motion-reduce:transition-none",
-        light
-          ? "text-white/70 hover:bg-white/10 hover:text-white"
-          : "text-foreground/70 hover:bg-secondary hover:text-foreground",
-      )}
-      aria-label={mode === "dark" ? "Гэрэл горим" : "Харанхуй горим"}
-    >
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.span
-          key={mode}
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
-          transition={{ duration: 0.2 }}
-          className="grid place-items-center"
-        >
-          {mode === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-        </motion.span>
-      </AnimatePresence>
-    </button>
-  )
 }
 
 function SportNavLink({

@@ -59,7 +59,9 @@ export function OrderForm({
   }, [fromCalc, params, pricing, qty, product])
 
   const productName = fromCalc
-    ? pricing.find((x) => x.id === params.get("type"))?.name ?? "Захиалга"
+    ? (params.get("product") && product?.name) ||
+      pricing.find((x) => x.id === params.get("type"))?.name ||
+      "Захиалга"
     : product?.name ?? "Захиалга"
 
   async function place() {

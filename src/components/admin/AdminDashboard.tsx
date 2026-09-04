@@ -43,8 +43,17 @@ import { ImageWithSkeleton } from "@/components/ImageWithSkeleton"
 import { ImageCropModal } from "@/components/admin/ImageCropModal"
 import { CountUp } from "@/components/motion/CountUp"
 import { StatusBadge } from "@/components/shared"
-import { Button, Input, Textarea, cx } from "@/components/ui"
+import { ThemeToggle } from "@/components/ThemeToggle"
+import { Button, Input, Select, Textarea, cx } from "@/components/ui"
 import { AnimatePresence, motion } from "motion/react"
+
+const CHART_TICK = { fontSize: 11, fill: "var(--muted-foreground)" }
+const CHART_TOOLTIP = {
+  background: "var(--card)",
+  border: "1px solid var(--border)",
+  borderRadius: 12,
+  color: "var(--foreground)",
+}
 
 type Tab = "overview" | "orders" | "products" | "pricing" | "messages" | "news"
 
@@ -84,17 +93,20 @@ export function AdminDashboard({
     <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:gap-6 sm:px-8 sm:py-8 lg:flex-row">
       <aside className="lg:w-60 lg:shrink-0">
         <div className="lg:sticky lg:top-4">
-          <div className="mb-3 flex items-center justify-between gap-3 lg:mb-4 lg:block">
+          <div className="mb-3 flex items-center justify-between gap-3 lg:mb-4">
             <div>
               <div className="font-display text-lg font-extrabold">Админ самбар</div>
               <div className="text-xs text-muted-foreground">LOGONEST ХХК</div>
             </div>
-            <button
-              onClick={logout}
-              className="flex h-11 items-center gap-2 rounded-xl px-3 text-sm font-medium text-muted-foreground hover:bg-secondary lg:hidden"
-            >
-              <LogOut className="h-4 w-4" /> Гарах
-            </button>
+            <div className="flex items-center gap-1">
+              <ThemeToggle />
+              <button
+                onClick={logout}
+                className="flex h-11 items-center gap-2 rounded-xl px-3 text-sm font-medium text-muted-foreground hover:bg-secondary lg:hidden"
+              >
+                <LogOut className="h-4 w-4" /> Гарах
+              </button>
+            </div>
           </div>
           <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] lg:mx-0 lg:flex-col lg:px-0 [&::-webkit-scrollbar]:hidden">
             {TABS.map((t) => (
@@ -146,7 +158,7 @@ export function AdminDashboard({
             {tab === "overview" && <Overview orders={orders} products={products} messages={messages} />}
             {tab === "orders" && <Orders orders={orders} />}
             {tab === "products" && <ProductsAdmin products={products} />}
-            {tab === "pricing" && <PricingAdmin pricing={pricing} />}
+            {tab === "pricing" && <PricingAdmin pricing={pricing} products={products} />}
             {tab === "messages" && <Messages messages={messages} />}
             {tab === "news" && <NewsAdmin news={news} />}
           </motion.div>
@@ -201,7 +213,7 @@ function Overview({
                   <Cell key={i} fill={COLORS[i % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip contentStyle={CHART_TOOLTIP} />
             </PieChart>
           </ResponsiveContainer>
           <div className="mt-2 flex flex-wrap gap-3">
@@ -217,9 +229,9 @@ function Overview({
         <Card title="Бүтээгдэхүүнээр орлого">
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={revenueByProduct} margin={{ left: -10 }}>
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={50} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v / 1000}k`} />
-              <Tooltip formatter={(v) => formatMNT(Number(v))} />
+              <XAxis dataKey="name" tick={CHART_TICK} interval={0} angle={-15} textAnchor="end" height={50} />
+              <YAxis tick={CHART_TICK} tickFormatter={(v) => `${v / 1000}k`} />
+              <Tooltip contentStyle={CHART_TOOLTIP} formatter={(v) => formatMNT(Number(v))} />
               <Bar dataKey="value" fill="#08cb00" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -588,72 +600,357 @@ function ProductsAdmin({ products }: { products: Product[] }) {
   )
 }
 
-function PricingAdmin({ pricing }: { pricing: PricingType[] }) {
+function uid(prefix: string) {
+  return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+}
+
+const DEFAULT_FINISH = { id: "none", name: "Энгийн", multiplier: 1 }
+
+function emptyPricingType(): PricingType {
+  return {
+    id: uid("type"),
+    name: "",
+    description: "",
+    mode: "area",
+    materials: [{ id: uid("mat"), name: "", pricePerM2: 0 }],
+    finishes: [{ ...DEFAULT_FINISH, id: uid("fin") }],
+  }
+}
+
+function pricingFromProduct(product: Product): PricingType {
+  const area = /м/.test(product.unit)
+  return {
+    id: uid("type"),
+    name: product.name,
+    description: product.tagline || product.description,
+    mode: area ? "area" : "unit",
+    productId: product.id,
+    basePricePerUnit: area ? undefined : product.basePrice,
+    materials: area ? [{ id: uid("mat"), name: product.name, pricePerM2: product.basePrice }] : [],
+    finishes: [{ ...DEFAULT_FINISH, id: uid("fin") }],
+  }
+}
+
+function PricingAdmin({ pricing, products }: { pricing: PricingType[]; products: Product[] }) {
   const [draft, setDraft] = useState<PricingType[]>(pricing)
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState("")
+  const [addProductId, setAddProductId] = useState("")
+  const router = useRouter()
 
-  function setMaterialPrice(typeId: string, matId: string, price: number) {
+  const linkedIds = new Set(draft.map((t) => t.productId).filter(Boolean))
+  const unusedProducts = products.filter((p) => !linkedIds.has(p.id))
+
+  function patchType(id: string, patch: Partial<PricingType> | ((t: PricingType) => PricingType)) {
     setDraft((prev) =>
-      prev.map((t) =>
-        t.id === typeId
-          ? { ...t, materials: t.materials?.map((m) => (m.id === matId ? { ...m, pricePerM2: price } : m)) }
-          : t,
-      ),
+      prev.map((t) => {
+        if (t.id !== id) return t
+        return typeof patch === "function" ? patch(t) : { ...t, ...patch }
+      }),
     )
   }
-  function setUnitPrice(typeId: string, price: number) {
-    setDraft((prev) => prev.map((t) => (t.id === typeId ? { ...t, basePricePerUnit: price } : t)))
+
+  function addType(type = emptyPricingType()) {
+    setDraft((prev) => [...prev, type])
+    setError("")
+  }
+
+  function addFromProduct(productId: string) {
+    const product = products.find((p) => p.id === productId)
+    if (!product) return
+    addType(pricingFromProduct(product))
+    setAddProductId("")
+  }
+
+  async function save() {
+    if (draft.some((t) => !t.name.trim())) {
+      setError("Төрөл бүрийн нэрийг бөглөнө үү.")
+      return
+    }
+    if (draft.some((t) => t.mode === "area" && (!t.materials?.length || t.materials.some((m) => !m.name.trim())))) {
+      setError("Материал бүрийн нэрийг бөглөнө үү.")
+      return
+    }
+    if (draft.some((t) => t.finishes.some((f) => !f.name.trim()))) {
+      setError("Өнгөлгөөний нэрийг бөглөнө үү.")
+      return
+    }
+    setSaving(true)
+    setError("")
+    try {
+      await updatePricingAction(draft)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 1500)
+      router.refresh()
+    } catch {
+      setError("Хадгалахад алдаа гарлаа.")
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
     <div className="space-y-6">
-      <SectionTitle title="Тооцоолуурын үнэ" subtitle="Материал, нэгжийн суурь үнийг тохируулах" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <SectionTitle title="Тооцоолуурын үнэ" subtitle="Нэр засах, төрөл нэмэх/хасах, бүтээгдэхүүнтэй холбох" />
+        <Button size="sm" className="shrink-0" onClick={() => addType()}>
+          <Plus className="h-4 w-4" /> Нэмэх
+        </Button>
+      </div>
+
+      {unusedProducts.length > 0 && (
+        <Select
+          label="Бүтээгдэхүүнээс нэмэх"
+          value={addProductId}
+          onChange={(e) => addFromProduct(e.target.value)}
+        >
+          <option value="">Бүтээгдэхүүн сонгох</option>
+          {unusedProducts.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name} · {formatMNT(p.basePrice)}/{p.unit}
+            </option>
+          ))}
+        </Select>
+      )}
+
+      {draft.length === 0 && (
+        <p className="rounded-2xl border border-dashed border-border py-12 text-center text-muted-foreground">
+          Тооцоолуурын төрөл алга. Нэмэх эсвэл бүтээгдэхүүнээс сонгоно уу.
+        </p>
+      )}
 
       {draft.map((t) => (
-        <div key={t.id} className="rounded-2xl border border-border bg-card p-6">
-          <h3 className="font-display font-bold">{t.name}</h3>
-          <p className="text-sm text-muted-foreground">{t.description}</p>
+        <div key={t.id} className="rounded-2xl border border-border bg-card p-4 sm:p-6">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1 space-y-4">
+              <Input
+                label="Нэр"
+                value={t.name}
+                onChange={(e) => patchType(t.id, { name: e.target.value })}
+                placeholder="Жишээ: Өргөн хэвлэл"
+              />
+              <Input
+                label="Тайлбар"
+                value={t.description}
+                onChange={(e) => patchType(t.id, { description: e.target.value })}
+                placeholder="Тооцоолуур дээр харагдах товч тайлбар"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setDraft((prev) => prev.filter((x) => x.id !== t.id))}
+              className="mt-7 grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground hover:border-primary hover:text-primary"
+              aria-label="Төрөл устгах"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {t.mode === "area" &&
-              t.materials?.map((m) => (
-                <Input
-                  key={m.id}
-                  label={`${m.name} (₮/м²)`}
-                  type="number"
-                  value={m.pricePerM2}
-                  onChange={(e) => setMaterialPrice(t.id, m.id, Number(e.target.value))}
-                />
+            <Select
+              label="Тооцоолох арга"
+              value={t.mode}
+              onChange={(e) => {
+                const mode = e.target.value as PricingType["mode"]
+                patchType(t.id, (cur) => ({
+                  ...cur,
+                  mode,
+                  materials:
+                    mode === "area" && (!cur.materials || cur.materials.length === 0)
+                      ? [{ id: uid("mat"), name: "", pricePerM2: 0 }]
+                      : cur.materials,
+                  basePricePerUnit: mode === "unit" ? (cur.basePricePerUnit ?? 0) : cur.basePricePerUnit,
+                }))
+              }}
+            >
+              <option value="area">Талбайгаар (м²)</option>
+              <option value="unit">Ширхгээр (ш)</option>
+            </Select>
+            <Select
+              label="Бүтээгдэхүүн"
+              value={t.productId ?? ""}
+              onChange={(e) => patchType(t.id, { productId: e.target.value || undefined })}
+            >
+              <option value="">— Холбоогүй —</option>
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
               ))}
-            {t.mode === "unit" && (
+            </Select>
+          </div>
+
+          {t.mode === "area" && (
+            <div className="mt-5">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-medium">Материал</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    patchType(t.id, {
+                      materials: [...(t.materials ?? []), { id: uid("mat"), name: "", pricePerM2: 0 }],
+                    })
+                  }
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  + Материал нэмэх
+                </button>
+              </div>
+              <div className="space-y-3">
+                {(t.materials ?? []).map((m) => (
+                  <div key={m.id} className="flex items-end gap-2">
+                    <div className="min-w-0 flex-1">
+                      <Input
+                        label="Материалын нэр"
+                        value={m.name}
+                        onChange={(e) =>
+                          patchType(t.id, {
+                            materials: t.materials?.map((x) =>
+                              x.id === m.id ? { ...x, name: e.target.value } : x,
+                            ),
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="w-32 shrink-0 sm:w-40">
+                      <Input
+                        label="₮/м²"
+                        type="number"
+                        value={m.pricePerM2}
+                        onChange={(e) =>
+                          patchType(t.id, {
+                            materials: t.materials?.map((x) =>
+                              x.id === m.id ? { ...x, pricePerM2: Number(e.target.value) } : x,
+                            ),
+                          })
+                        }
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        patchType(t.id, { materials: t.materials?.filter((x) => x.id !== m.id) })
+                      }
+                      disabled={(t.materials?.length ?? 0) <= 1}
+                      className="mb-0 grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground hover:border-primary hover:text-primary disabled:opacity-40"
+                      aria-label="Материал устгах"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {products.length > 0 && (
+                <div className="mt-3">
+                  <Select
+                    label="Бүтээгдэхүүнээс материал нэмэх"
+                    value=""
+                    onChange={(e) => {
+                      const product = products.find((p) => p.id === e.target.value)
+                      if (!product) return
+                      patchType(t.id, {
+                        materials: [
+                          ...(t.materials ?? []),
+                          { id: uid("mat"), name: product.name, pricePerM2: product.basePrice },
+                        ],
+                      })
+                    }}
+                  >
+                    <option value="">Бүтээгдэхүүн сонгох</option>
+                    {products.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} · {formatMNT(p.basePrice)}/{p.unit}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              )}
+            </div>
+          )}
+
+          {t.mode === "unit" && (
+            <div className="mt-4">
               <Input
                 label="Суурь үнэ (₮/ш)"
                 type="number"
                 value={t.basePricePerUnit ?? 0}
-                onChange={(e) => setUnitPrice(t.id, Number(e.target.value))}
+                onChange={(e) => patchType(t.id, { basePricePerUnit: Number(e.target.value) })}
               />
-            )}
+            </div>
+          )}
+
+          <div className="mt-5">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm font-medium">Өнгөлгөө / нэмэлт</span>
+              <button
+                type="button"
+                onClick={() =>
+                  patchType(t.id, {
+                    finishes: [...t.finishes, { id: uid("fin"), name: "", multiplier: 1 }],
+                  })
+                }
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                + Нэмэлт нэмэх
+              </button>
+            </div>
+            <div className="space-y-3">
+              {t.finishes.map((f) => (
+                <div key={f.id} className="flex items-end gap-2">
+                  <div className="min-w-0 flex-1">
+                    <Input
+                      label="Нэр"
+                      value={f.name}
+                      onChange={(e) =>
+                        patchType(t.id, {
+                          finishes: t.finishes.map((x) =>
+                            x.id === f.id ? { ...x, name: e.target.value } : x,
+                          ),
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="w-28 shrink-0">
+                    <Input
+                      label="Үржвэр"
+                      type="number"
+                      step="0.05"
+                      min={0}
+                      value={f.multiplier}
+                      onChange={(e) =>
+                        patchType(t.id, {
+                          finishes: t.finishes.map((x) =>
+                            x.id === f.id ? { ...x, multiplier: Number(e.target.value) } : x,
+                          ),
+                        })
+                      }
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      patchType(t.id, { finishes: t.finishes.filter((x) => x.id !== f.id) })
+                    }
+                    disabled={t.finishes.length <= 1}
+                    className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground hover:border-primary hover:text-primary disabled:opacity-40"
+                    aria-label="Өнгөлгөө устгах"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       ))}
 
-      <div className="flex items-center gap-3">
-        <Button
-          loading={saving}
-          onClick={async () => {
-            setSaving(true)
-            try {
-              await updatePricingAction(draft)
-              setSaved(true)
-              setTimeout(() => setSaved(false), 1500)
-            } finally {
-              setSaving(false)
-            }
-          }}
-        >
+      <div className="flex flex-wrap items-center gap-3">
+        <Button loading={saving} onClick={save}>
           Хадгалах
         </Button>
         {saved && <span className="text-sm text-primary">Хадгалагдлаа ✓</span>}
+        {error && <span className="text-sm text-primary">{error}</span>}
       </div>
     </div>
   )

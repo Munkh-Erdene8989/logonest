@@ -24,9 +24,10 @@ function asPricing(id: string, data: DocumentData): PricingType {
     name: String(data.name ?? ""),
     description: String(data.description ?? ""),
     mode: data.mode === "unit" ? "unit" : "area",
+    productId: data.productId ? String(data.productId) : undefined,
     basePricePerM2: data.basePricePerM2,
     basePricePerUnit: data.basePricePerUnit,
-    materials: data.materials,
+    materials: Array.isArray(data.materials) ? data.materials : undefined,
     finishes: Array.isArray(data.finishes) ? data.finishes : [],
   }
 }
