@@ -13,6 +13,17 @@ const MAX_FILE = 20 * 1024 * 1024
 export async function createOrderAction(formData: FormData): Promise<
   { ok: true; code: string; total: number; payment?: OrderPayment } | { ok: false; error: string }
 > {
+  try {
+    return await createOrder(formData)
+  } catch (err) {
+    console.error("createOrderAction failed", err)
+    return { ok: false, error: "Захиалга үүсгэхэд алдаа гарлаа. Дахин оролдоно уу." }
+  }
+}
+
+async function createOrder(formData: FormData): Promise<
+  { ok: true; code: string; total: number; payment?: OrderPayment } | { ok: false; error: string }
+> {
   const productName = String(formData.get("productName") ?? "").trim()
   const spec = String(formData.get("spec") ?? "").trim()
   const quantity = Math.max(1, Number(formData.get("quantity") ?? 1))
@@ -74,12 +85,12 @@ export async function createOrderAction(formData: FormData): Promise<
     spec,
     quantity,
     total,
-    customer: { name, phone, email, note: note || undefined },
-    fileName,
-    fileUrl,
+    customer: { name, phone, email, ...(note ? { note } : {}) },
     timeline: [{ status: "received", at: now, note: "Захиалга хүлээн авлаа" }],
     phoneNormalized: normalizePhone(phone),
     emailLower: email.toLowerCase(),
+    ...(fileName ? { fileName } : {}),
+    ...(fileUrl ? { fileUrl } : {}),
   }
 
   await db.collection("orders").doc(code).set(order)
