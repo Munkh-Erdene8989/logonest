@@ -45,15 +45,8 @@ function getAdminApp(): App {
   })
 }
 
-let firestoreReady = false
-
 export function adminDb() {
-  const db = getFirestore(getAdminApp())
-  if (!firestoreReady) {
-    db.settings({ ignoreUndefinedProperties: true })
-    firestoreReady = true
-  }
-  return db
+  return getFirestore(getAdminApp())
 }
 
 export function adminAuth() {
