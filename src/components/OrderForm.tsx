@@ -5,8 +5,9 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Check, CheckCircle2, Copy, FileUp, Package } from "lucide-react"
 import { createOrderAction } from "@/lib/actions/public"
+import { QPayCheckout } from "@/components/QPayCheckout"
 import { copyText, formatMNT } from "@/lib/format"
-import type { PricingType, Product } from "@/lib/types"
+import type { OrderPayment, PricingType, Product } from "@/lib/types"
 import { Reveal } from "@/components/motion/Reveal"
 import { Button, ButtonLink, Eyebrow, Input, Section, Select, Textarea, cx } from "@/components/ui"
 import { AnimatePresence, motion } from "motion/react"
@@ -28,7 +29,8 @@ export function OrderForm({
   const [note, setNote] = useState("")
   const [file, setFile] = useState<File | null>(null)
   const [customer, setCustomer] = useState({ name: "", phone: "", email: "", note: "" })
-  const [placed, setPlaced] = useState<{ code: string; total: number } | null>(null)
+  const [placed, setPlaced] = useState<{ code: string; total: number; payment?: OrderPayment } | null>(null)
+  const [paid, setPaid] = useState(false)
   const [copied, setCopied] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
@@ -83,7 +85,8 @@ export function OrderForm({
       setError(res.error)
       return
     }
-    setPlaced({ code: res.code, total: res.total })
+    setPlaced({ code: res.code, total: res.total, payment: res.payment })
+    setPaid(res.payment?.status === "paid")
   }
 
   const canContact = customer.name && customer.phone.length >= 6
@@ -92,32 +95,48 @@ export function OrderForm({
     return (
       <Section className="py-20">
         <Reveal from="load">
-        <div className="mx-auto max-w-lg rounded-3xl border border-border bg-card p-8 text-center sm:p-10">
-          <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-accent text-accent-foreground">
-            <CheckCircle2 className="h-8 w-8" />
-          </span>
-          <h1 className="mt-6 font-display text-2xl font-extrabold">Захиалга амжилттай!</h1>
-          <p className="mt-2 text-muted-foreground">
-            Таны захиалгын дугаар. Үүгээр эсвэл утас/имэйлээрээ явцаа хянаж болно.
-          </p>
-          <div className="mt-6 flex items-center justify-center gap-3 rounded-xl border border-dashed border-primary/40 bg-accent/30 px-5 py-4">
-            <span className="font-mono text-2xl font-bold text-primary">{placed.code}</span>
-            <button
-              onClick={async () => {
-                await copyText(placed.code)
-                setCopied(true)
-                setTimeout(() => setCopied(false), 1500)
-              }}
-              className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-card hover:border-primary"
-              aria-label="Хуулах"
-            >
-              {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
-            </button>
+        <div className="mx-auto max-w-2xl space-y-5">
+          <div className="rounded-3xl border border-border bg-card p-8 text-center sm:p-10">
+            <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-accent text-accent-foreground">
+              <CheckCircle2 className="h-8 w-8" />
+            </span>
+            <h1 className="mt-6 font-display text-2xl font-extrabold">
+              {paid ? "Төлбөр баталгаажлаа!" : "Захиалга үүслээ"}
+            </h1>
+            <p className="mt-2 text-muted-foreground">
+              {paid
+                ? "Таны захиалгын дугаар. Үүгээр эсвэл утас/имэйлээрээ явцаа хянаж болно."
+                : "QPay QR эсвэл банкны аппаараа төлбөрөө хийнэ үү."}
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-3 rounded-xl border border-dashed border-primary/40 bg-accent/30 px-5 py-4">
+              <span className="font-mono text-2xl font-bold text-primary">{placed.code}</span>
+              <button
+                onClick={async () => {
+                  await copyText(placed.code)
+                  setCopied(true)
+                  setTimeout(() => setCopied(false), 1500)
+                }}
+                className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-card hover:border-primary"
+                aria-label="Хуулах"
+              >
+                {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+              </button>
+            </div>
+            <div className="mt-4 text-sm text-muted-foreground">
+              Нийт дүн: <b className="text-foreground">{formatMNT(placed.total)}</b>
+            </div>
           </div>
-          <div className="mt-4 text-sm text-muted-foreground">
-            Нийт дүн: <b className="text-foreground">{formatMNT(placed.total)}</b>
-          </div>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+
+          {placed.payment && !paid && (
+            <QPayCheckout
+              code={placed.code}
+              total={placed.total}
+              initial={placed.payment}
+              onPaid={() => setPaid(true)}
+            />
+          )}
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
             <ButtonLink href={`/track?code=${placed.code}`} size="md">
               Захиалгын явц харах
             </ButtonLink>
@@ -317,7 +336,7 @@ export function OrderForm({
                 <div className="flex justify-between">
                   <Button variant="ghost" onClick={() => setStep(2)}>Буцах</Button>
                   <Button onClick={place} disabled={submitting}>
-                    {submitting ? "Илгээж байна..." : "Захиалга баталгаажуулах"}
+                    {submitting ? "Илгээж байна..." : "Захиалга өгөөд төлөх"}
                   </Button>
                 </div>
               </motion.div>

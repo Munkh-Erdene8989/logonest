@@ -5,10 +5,11 @@ import { useSearchParams } from "next/navigation"
 import { AnimatePresence, motion } from "motion/react"
 import { PackageSearch, SearchX } from "lucide-react"
 import { trackOrdersAction } from "@/lib/actions/public"
+import { QPayCheckout } from "@/components/QPayCheckout"
 import { formatDate, formatMNT } from "@/lib/format"
 import type { Order } from "@/lib/types"
 import { Reveal } from "@/components/motion/Reveal"
-import { OrderTimeline, StatusBadge } from "@/components/shared"
+import { OrderTimeline, PaymentBadge, StatusBadge } from "@/components/shared"
 import { Button, Eyebrow, Section } from "@/components/ui"
 
 export function TrackForm() {
@@ -110,13 +111,21 @@ export function TrackForm() {
                     <h2 className="mt-1 font-display text-xl font-bold">{o.productName}</h2>
                     <p className="text-sm text-muted-foreground">{o.spec}</p>
                   </div>
-                  <StatusBadge status={o.status} />
+                  <div className="flex flex-wrap items-center gap-2">
+                    {o.payment && <PaymentBadge status={o.payment.status} />}
+                    <StatusBadge status={o.status} />
+                  </div>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
                   <span>{formatDate(o.createdAt)}</span>
                   <span>{formatMNT(o.total)}</span>
                   {o.fileName && <span>Файл: {o.fileName}</span>}
                 </div>
+                {o.payment && o.payment.status !== "paid" && (
+                  <div className="mt-5">
+                    <QPayCheckout code={o.code} total={o.total} initial={o.payment} />
+                  </div>
+                )}
                 <div className="mt-6">
                   <OrderTimeline order={o} />
                 </div>

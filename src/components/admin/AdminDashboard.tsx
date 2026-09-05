@@ -42,7 +42,7 @@ import { formatDate, formatMNT } from "@/lib/format"
 import { ImageWithSkeleton } from "@/components/ImageWithSkeleton"
 import { ImageCropModal } from "@/components/admin/ImageCropModal"
 import { CountUp } from "@/components/motion/CountUp"
-import { StatusBadge } from "@/components/shared"
+import { PaymentBadge, StatusBadge } from "@/components/shared"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { Button, Input, Select, Textarea, cx } from "@/components/ui"
 import { AnimatePresence, motion } from "motion/react"
@@ -177,7 +177,10 @@ function Overview({
   products: Product[]
   messages: Message[]
 }) {
-  const revenue = orders.reduce((s, o) => s + o.total, 0)
+  const revenue = orders.reduce((s, o) => {
+    if (o.payment && o.payment.status !== "paid") return s
+    return s + o.total
+  }, 0)
   const active = orders.filter((o) => o.status !== "delivered").length
 
   const statusData = STATUS_ORDER.map((s) => ({
@@ -189,7 +192,10 @@ function Overview({
 
   const revenueByProduct = useMemo(() => {
     const map = new Map<string, number>()
-    orders.forEach((o) => map.set(o.productName, (map.get(o.productName) ?? 0) + o.total))
+    orders.forEach((o) => {
+      if (o.payment && o.payment.status !== "paid") return
+      map.set(o.productName, (map.get(o.productName) ?? 0) + o.total)
+    })
     return Array.from(map, ([name, value]) => ({ name, value }))
   }, [orders])
 
@@ -245,7 +251,10 @@ function Overview({
               <span className="font-mono font-medium text-primary">{o.code}</span>
               <span className="hidden flex-1 px-4 text-muted-foreground sm:block">{o.productName}</span>
               <span className="mr-4 font-medium">{formatMNT(o.total)}</span>
-              <StatusBadge status={o.status} />
+              <div className="flex items-center gap-2">
+                {o.payment && <PaymentBadge status={o.payment.status} />}
+                <StatusBadge status={o.status} />
+              </div>
             </div>
           ))}
           {messages.length > 0 && (
@@ -288,6 +297,7 @@ function Orders({ orders }: { orders: Order[] }) {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-mono font-bold text-primary">{o.code}</span>
+                  {o.payment && <PaymentBadge status={o.payment.status} />}
                   <StatusBadge status={o.status} />
                 </div>
                 <div className="mt-1.5 font-display font-bold">{o.productName}</div>

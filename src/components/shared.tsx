@@ -3,8 +3,8 @@
 import Link from "next/link"
 import { motion } from "motion/react"
 import { Check } from "lucide-react"
-import type { Order, OrderStatus, Product } from "@/lib/types"
-import { STATUS_LABEL, STATUS_ORDER } from "@/lib/types"
+import type { Order, OrderStatus, PaymentStatus, Product } from "@/lib/types"
+import { PAYMENT_LABEL, STATUS_LABEL, STATUS_ORDER } from "@/lib/types"
 import { formatDate, formatMNT } from "@/lib/format"
 import { ImageWithSkeleton } from "./ImageWithSkeleton"
 import { Badge, cx } from "./ui"
@@ -62,6 +62,16 @@ const statusStyle: Record<OrderStatus, string> = {
 
 export function StatusBadge({ status }: { status: OrderStatus }) {
   return <Badge className={statusStyle[status]}>{STATUS_LABEL[status]}</Badge>
+}
+
+const paymentStyle: Record<PaymentStatus, string> = {
+  unpaid: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+  paid: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+  failed: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300",
+}
+
+export function PaymentBadge({ status }: { status: PaymentStatus }) {
+  return <Badge className={paymentStyle[status]}>{PAYMENT_LABEL[status]}</Badge>
 }
 
 export function OrderTimeline({ order }: { order: Order }) {

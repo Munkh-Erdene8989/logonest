@@ -1,7 +1,7 @@
 import type { DocumentData } from "firebase-admin/firestore"
 import { adminDb } from "./firebase/admin"
 import { NEWS_ITEMS, PRICING_TYPES, PRODUCTS } from "./seed-data"
-import type { Message, NewsItem, Order, PricingType, Product } from "./types"
+import type { Message, NewsItem, Order, OrderPayment, PaymentStatus, PricingType, Product } from "./types"
 
 function asProduct(id: string, data: DocumentData): Product {
   return {
@@ -32,7 +32,7 @@ function asPricing(id: string, data: DocumentData): PricingType {
   }
 }
 
-function asOrder(id: string, data: DocumentData): Order {
+export function asOrder(id: string, data: DocumentData): Order {
   return {
     code: id,
     createdAt: String(data.createdAt ?? ""),
@@ -52,6 +52,36 @@ function asOrder(id: string, data: DocumentData): Order {
     timeline: Array.isArray(data.timeline) ? data.timeline : [],
     phoneNormalized: String(data.phoneNormalized ?? ""),
     emailLower: String(data.emailLower ?? ""),
+    qpayInvoiceId: data.qpayInvoiceId ? String(data.qpayInvoiceId) : undefined,
+    payment: asPayment(data.payment),
+  }
+}
+
+function asPayment(raw: unknown): OrderPayment | undefined {
+  if (!raw || typeof raw !== "object") return undefined
+  const data = raw as Record<string, unknown>
+  const status = data.status
+  if (status !== "unpaid" && status !== "paid" && status !== "failed") return undefined
+  return {
+    status: status as PaymentStatus,
+    invoiceId: data.invoiceId ? String(data.invoiceId) : undefined,
+    qrImage: data.qrImage ? String(data.qrImage) : undefined,
+    shortUrl: data.shortUrl ? String(data.shortUrl) : undefined,
+    urls: Array.isArray(data.urls)
+      ? data.urls.map((u) => {
+          const url = u as Record<string, unknown>
+          return {
+            name: String(url.name ?? ""),
+            description: String(url.description ?? ""),
+            logo: String(url.logo ?? ""),
+            link: String(url.link ?? ""),
+          }
+        })
+      : undefined,
+    paymentId: data.paymentId ? String(data.paymentId) : undefined,
+    paidAt: data.paidAt ? String(data.paidAt) : undefined,
+    paidAmount: data.paidAmount != null ? Number(data.paidAmount) : undefined,
+    error: data.error ? String(data.error) : undefined,
   }
 }
 

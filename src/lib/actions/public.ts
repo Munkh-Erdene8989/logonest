@@ -1,14 +1,17 @@
 "use server"
 
 import { adminBucket, adminDb } from "@/lib/firebase/admin"
+import { asOrder } from "@/lib/data"
 import { makeOrderCode, normalizePhone } from "@/lib/format"
-import type { Order } from "@/lib/types"
+import { qpayConfigured } from "@/lib/qpay"
+import { confirmInvoicePayment, issueInvoiceForOrder } from "@/lib/qpay-orders"
+import type { Order, OrderPayment } from "@/lib/types"
 
 const ALLOWED_EXT = new Set(["pdf", "ai", "psd", "jpg", "jpeg", "png", "tif", "tiff"])
 const MAX_FILE = 20 * 1024 * 1024
 
 export async function createOrderAction(formData: FormData): Promise<
-  { ok: true; code: string; total: number } | { ok: false; error: string }
+  { ok: true; code: string; total: number; payment?: OrderPayment } | { ok: false; error: string }
 > {
   const productName = String(formData.get("productName") ?? "").trim()
   const spec = String(formData.get("spec") ?? "").trim()
@@ -80,7 +83,21 @@ export async function createOrderAction(formData: FormData): Promise<
   }
 
   await db.collection("orders").doc(code).set(order)
-  return { ok: true, code, total }
+
+  if (!qpayConfigured() || total < 1) {
+    return { ok: true, code, total }
+  }
+
+  try {
+    const payment = await issueInvoiceForOrder(order)
+    return { ok: true, code, total, payment }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "QPay нэхэмжлэх үүсгэж чадсангүй"
+    console.error("QPay invoice failed", err)
+    const payment: OrderPayment = { status: "failed", error: message }
+    await db.collection("orders").doc(code).update({ payment })
+    return { ok: true, code, total, payment }
+  }
 }
 
 export async function trackOrdersAction(query: string): Promise<Order[]> {
@@ -97,7 +114,7 @@ export async function trackOrdersAction(query: string): Promise<Order[]> {
   if (asCode || /^LN-/i.test(term)) {
     const code = term.toUpperCase()
     const doc = await db.collection("orders").doc(code).get()
-    return doc.exists ? [{ ...(doc.data() as Order), code: doc.id }] : []
+    return doc.exists ? [asOrder(doc.id, doc.data()!)] : []
   }
 
   if (term.includes("@")) {
@@ -105,7 +122,7 @@ export async function trackOrdersAction(query: string): Promise<Order[]> {
       .collection("orders")
       .where("emailLower", "==", term.toLowerCase())
       .get()
-    return snap.docs.map((d) => ({ ...(d.data() as Order), code: d.id }))
+    return snap.docs.map((d) => asOrder(d.id, d.data()))
   }
 
   const phone = normalizePhone(term)
@@ -114,11 +131,72 @@ export async function trackOrdersAction(query: string): Promise<Order[]> {
       .collection("orders")
       .where("phoneNormalized", "==", phone)
       .get()
-    return snap.docs.map((d) => ({ ...(d.data() as Order), code: d.id }))
+    return snap.docs.map((d) => asOrder(d.id, d.data()))
   }
 
   const doc = await db.collection("orders").doc(term.toUpperCase()).get()
-  return doc.exists ? [{ ...(doc.data() as Order), code: doc.id }] : []
+  return doc.exists ? [asOrder(doc.id, doc.data()!)] : []
+}
+
+export async function getOrderPaymentAction(
+  code: string,
+): Promise<{ status: OrderPayment["status"]; paidAmount?: number } | { ok: false; error: string }> {
+  const id = code.trim().toUpperCase()
+  if (!id) return { ok: false, error: "Захиалгын дугаар дутуу." }
+  const doc = await adminDb().collection("orders").doc(id).get()
+  if (!doc.exists) return { ok: false, error: "Захиалга олдсонгүй." }
+  const order = asOrder(doc.id, doc.data()!)
+  return {
+    status: order.payment?.status ?? "unpaid",
+    paidAmount: order.payment?.paidAmount,
+  }
+}
+
+export async function checkOrderPaymentAction(
+  code: string,
+): Promise<{ paid: boolean; status: OrderPayment["status"]; error?: string }> {
+  const id = code.trim().toUpperCase()
+  if (!id) return { paid: false, status: "unpaid", error: "Захиалгын дугаар дутуу." }
+  const doc = await adminDb().collection("orders").doc(id).get()
+  if (!doc.exists) return { paid: false, status: "unpaid", error: "Захиалга олдсонгүй." }
+  const order = asOrder(doc.id, doc.data()!)
+  const invoiceId = order.qpayInvoiceId ?? order.payment?.invoiceId
+  if (!invoiceId) return { paid: false, status: order.payment?.status ?? "unpaid" }
+  try {
+    const result = await confirmInvoicePayment(invoiceId, order.code)
+    return {
+      paid: result.paid,
+      status: result.paid ? "paid" : (order.payment?.status ?? "unpaid"),
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Төлбөр шалгаж чадсангүй"
+    return { paid: false, status: order.payment?.status ?? "unpaid", error: message }
+  }
+}
+
+export async function retryOrderInvoiceAction(
+  code: string,
+): Promise<{ ok: true; payment: OrderPayment } | { ok: false; error: string }> {
+  const id = code.trim().toUpperCase()
+  if (!id) return { ok: false, error: "Захиалгын дугаар дутуу." }
+  const doc = await adminDb().collection("orders").doc(id).get()
+  if (!doc.exists) return { ok: false, error: "Захиалга олдсонгүй." }
+  const order = asOrder(doc.id, doc.data()!)
+  if (order.payment?.status === "paid") {
+    return { ok: true, payment: order.payment }
+  }
+  if (order.qpayInvoiceId && order.payment?.invoiceId) {
+    return { ok: true, payment: order.payment }
+  }
+  if (!qpayConfigured()) return { ok: false, error: "QPay тохиргоо дутуу байна." }
+  if (order.total < 1) return { ok: false, error: "Төлбөрийн дүн буруу байна." }
+  try {
+    const payment = await issueInvoiceForOrder(order)
+    return { ok: true, payment }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "QPay нэхэмжлэх үүсгэж чадсангүй"
+    return { ok: false, error: message }
+  }
 }
 
 export async function sendMessageAction(input: {

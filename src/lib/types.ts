@@ -42,6 +42,27 @@ export type OrderEvent = {
   note?: string
 }
 
+export type PaymentStatus = "unpaid" | "paid" | "failed"
+
+export type OrderPaymentUrl = {
+  name: string
+  description: string
+  logo: string
+  link: string
+}
+
+export type OrderPayment = {
+  status: PaymentStatus
+  invoiceId?: string
+  qrImage?: string
+  shortUrl?: string
+  urls?: OrderPaymentUrl[]
+  paymentId?: string
+  paidAt?: string
+  paidAmount?: number
+  error?: string
+}
+
 export type Order = {
   code: string
   createdAt: string
@@ -61,6 +82,8 @@ export type Order = {
   timeline: OrderEvent[]
   phoneNormalized: string
   emailLower: string
+  qpayInvoiceId?: string
+  payment?: OrderPayment
 }
 
 export type Message = {
@@ -87,6 +110,12 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
   printing: "Хэвлэлт",
   ready: "Бэлэн болсон",
   delivered: "Хүргэсэн",
+}
+
+export const PAYMENT_LABEL: Record<PaymentStatus, string> = {
+  unpaid: "Төлөгдөөгүй",
+  paid: "Төлсөн",
+  failed: "Төлбөрийн алдаа",
 }
 
 export const STATUS_ORDER: OrderStatus[] = [
