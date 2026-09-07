@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { ArrowRight, Info } from "lucide-react"
 import { calculatePrice, type CalcInput } from "@/lib/pricing"
 import { formatMNT } from "@/lib/format"
@@ -95,8 +95,8 @@ export function CalculatorForm({ pricing }: { pricing: PricingType[] }) {
               </Select>
 
               <div className="grid grid-cols-2 gap-4">
-                <NumberField label="Өргөн (см)" value={width} onChange={setWidth} min={1} />
-                <NumberField label="Өндөр (см)" value={height} onChange={setHeight} min={1} />
+                <NumberField label="Өргөн (см)" value={width} onChange={setWidth} />
+                <NumberField label="Өндөр (см)" value={height} onChange={setHeight} />
               </div>
             </>
           )}
@@ -114,7 +114,6 @@ export function CalculatorForm({ pricing }: { pricing: PricingType[] }) {
             label={type?.mode === "unit" ? "Тоо ширхэг (ш)" : "Тоо ширхэг"}
             value={qty}
             onChange={setQty}
-            min={1}
           />
         </div>
 
@@ -159,21 +158,29 @@ function NumberField({
   label,
   value,
   onChange,
-  min = 0,
 }: {
   label: string
   value: number
   onChange: (v: number) => void
-  min?: number
 }) {
+  const [draft, setDraft] = useState(value ? String(value) : "")
+
+  useEffect(() => {
+    setDraft(value ? String(value) : "")
+  }, [value])
+
   return (
     <label className="block">
       <span className="mb-1.5 block text-sm font-medium">{label}</span>
       <input
-        type="number"
-        min={min}
-        value={value}
-        onChange={(e) => onChange(Math.max(min, Number(e.target.value)))}
+        type="text"
+        inputMode="numeric"
+        value={draft}
+        onChange={(e) => {
+          const raw = e.target.value.replace(/[^\d]/g, "")
+          setDraft(raw)
+          onChange(raw === "" ? 0 : Number(raw))
+        }}
         className="h-11 w-full rounded-xl border border-border bg-card px-4 font-mono transition-colors duration-200 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 motion-reduce:transition-none"
       />
     </label>
