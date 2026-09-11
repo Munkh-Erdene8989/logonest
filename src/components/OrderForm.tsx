@@ -26,6 +26,7 @@ export function OrderForm({
   const [step, setStep] = useState(0)
   const [productId, setProductId] = useState(params.get("product") ?? products[0]?.id ?? "")
   const [qty, setQty] = useState(Number(params.get("qty")) || 1)
+  const [qtyDraft, setQtyDraft] = useState(String(Number(params.get("qty")) || 1))
   const [note, setNote] = useState("")
   const [file, setFile] = useState<File | null>(null)
   const [customer, setCustomer] = useState({ name: "", phone: "", email: "", note: "" })
@@ -42,7 +43,7 @@ export function OrderForm({
   const total = useMemo(() => {
     if (fromCalc && calcTotal) return calcTotal
     if (!product) return 0
-    return product.basePrice * Math.max(1, qty)
+    return product.basePrice * qty
   }, [fromCalc, calcTotal, product, qty])
 
   const spec = useMemo(() => {
@@ -212,10 +213,15 @@ export function OrderForm({
                     </Select>
                     <Input
                       label="Тоо ширхэг"
-                      type="number"
-                      min={1}
-                      value={qty}
-                      onChange={(e) => setQty(Math.max(1, Number(e.target.value)))}
+                      type="text"
+                      inputMode="numeric"
+                      value={qtyDraft}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^\d]/g, "")
+                        setQtyDraft(raw)
+                        setQty(raw === "" ? 0 : Number(raw))
+                      }}
+                      className="font-mono"
                     />
                   </>
                 )}

@@ -15,7 +15,7 @@ export function ProductCard({ product }: { product: Product }) {
       href={`/products/${product.id}`}
       className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-ink/5 motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:hover:shadow-none"
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+      <div className="relative aspect-square overflow-hidden bg-muted">
         <ImageWithSkeleton
           src={product.image}
           alt={product.name}

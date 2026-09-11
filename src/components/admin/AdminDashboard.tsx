@@ -459,7 +459,7 @@ function ProductsAdmin({ products }: { products: Product[] }) {
             }}
           >
             {previewSrc ? (
-              <div className="relative aspect-[4/3] w-full max-w-xs overflow-hidden rounded-xl bg-muted">
+              <div className="relative aspect-square w-full max-w-xs overflow-hidden rounded-xl bg-muted">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={previewSrc} alt="" className="h-full w-full object-cover" />
               </div>
@@ -468,7 +468,7 @@ function ProductsAdmin({ products }: { products: Product[] }) {
             )}
             <div>
               <p className="font-medium">{previewSrc ? "Зураг солих" : "Зураг оруулах"}</p>
-              <p className="text-sm text-muted-foreground">JPG, PNG, WebP · 4:3 таслах · товшиж сонгоно уу</p>
+              <p className="text-sm text-muted-foreground">JPG, PNG, WebP · 1:1 таслах · товшиж сонгоно уу</p>
             </div>
             {file && (
               <span className="rounded-full bg-accent px-3 py-1 text-sm font-medium text-accent-foreground">

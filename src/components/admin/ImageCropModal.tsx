@@ -4,9 +4,9 @@ import { useCallback, useEffect, useState } from "react"
 import Cropper, { type Area } from "react-easy-crop"
 import { Button } from "@/components/ui"
 
-const ASPECT = 4 / 3
+const ASPECT = 1
 const MAX_W = 1600
-const MAX_H = 1200
+const MAX_H = 1600
 
 function loadImage(src: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
@@ -36,7 +36,7 @@ export async function cropToCoverFile(src: string, pixelCrop: Area): Promise<Fil
     outW = Math.round(outW * (MAX_H / outH))
     outH = MAX_H
   }
-  outH = Math.round((outW * 3) / 4)
+  outH = outW
 
   const canvas = document.createElement("canvas")
   canvas.width = Math.max(1, outW)
@@ -116,14 +116,14 @@ export function ImageCropModal({
       >
         <div className="px-5 pt-5 sm:px-6">
           <h2 id="crop-title" className="font-display text-lg font-extrabold">
-            4:3 хэмжээнд таслах
+            1:1 хэмжээнд таслах
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Зургийг чирж, томруулж харагдах хэсгээ сонгоно уу.
           </p>
         </div>
 
-        <div className="relative mx-5 mt-4 aspect-[4/3] overflow-hidden rounded-2xl bg-muted sm:mx-6">
+        <div className="relative mx-5 mt-4 aspect-square overflow-hidden rounded-2xl bg-muted sm:mx-6">
           <Cropper
             image={src}
             crop={crop}

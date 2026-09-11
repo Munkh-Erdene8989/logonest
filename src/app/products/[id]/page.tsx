@@ -48,7 +48,7 @@ export default async function ProductDetailPage({
 
       <div className="mt-6 grid gap-10 lg:grid-cols-2">
         <Reveal from="load">
-          <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border bg-muted">
+          <div className="relative aspect-square overflow-hidden rounded-2xl border border-border bg-muted">
             <ImageWithSkeleton
               src={product.image}
               alt={product.name}
