@@ -2,7 +2,14 @@
 
 import { Suspense, useMemo, useRef } from "react"
 import { Canvas, useFrame } from "@react-three/fiber"
-import { AdaptiveDpr, ContactShadows, PerspectiveCamera } from "@react-three/drei"
+import {
+  AdaptiveDpr,
+  ContactShadows,
+  Environment,
+  Html,
+  PerspectiveCamera,
+  useProgress,
+} from "@react-three/drei"
 import * as THREE from "three"
 import { JerseyModel } from "./JerseyModel"
 import { jerseyScroll } from "./jersey-state"
@@ -66,85 +73,84 @@ function BackdropMark() {
   )
 }
 
+function Loader() {
+  const { progress } = useProgress()
+  return (
+    <Html center>
+      <p className="font-mono text-[11px] tracking-[0.22em] text-white/45">
+        {Math.round(progress)}%
+      </p>
+    </Html>
+  )
+}
+
 function Lights() {
-  const green = useRef<THREE.SpotLight>(null)
-  useFrame(({ clock }) => {
-    if (green.current) {
-      const pulse = 18 + Math.sin(clock.elapsedTime * 0.7) * 3
-      green.current.intensity = pulse + jerseyScroll.vent * 10 + jerseyScroll.stitch * 6
-    }
-  })
   return (
     <>
-      <ambientLight intensity={0.12} color="#9aa8a0" />
+      <ambientLight intensity={0.32} color="#e8e8e8" />
+      <hemisphereLight args={["#f3f3f3", "#1a1a1a", 0.45]} />
       <spotLight
         position={[2.4, 5.2, 3.4]}
         angle={0.55}
         penumbra={0.7}
-        intensity={55}
-        color="#f4f7f4"
+        intensity={48}
+        color="#f4f4f4"
         castShadow
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
       />
       <spotLight
-        ref={green}
         position={[3.6, 1.6, 1.2]}
         angle={0.7}
         penumbra={0.85}
-        intensity={20}
-        color="#08CB00"
+        intensity={10}
+        color="#f0f0f0"
       />
       <spotLight
         position={[-3.2, 2.4, 2]}
         angle={0.65}
         penumbra={0.8}
-        intensity={12}
-        color="#5a6a62"
+        intensity={18}
+        color="#d8d8d8"
       />
-      <pointLight position={[0, -0.8, 2.2]} intensity={6} color="#08CB00" />
-      <directionalLight position={[-2, 4, -3]} intensity={0.35} color="#08CB00" />
-    </>
-  )
-}
-
-function Scene() {
-  return (
-    <>
-      <StudioCamera />
-      <Lights />
-      <BackdropMark />
-      <GroundMark />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.64, 0]} receiveShadow>
-        <circleGeometry args={[7, 48]} />
-        <meshStandardMaterial color="#0a0c0b" metalness={0.72} roughness={0.28} />
-      </mesh>
-      <ContactShadows
-        position={[0, -1.63, 0]}
-        opacity={0.55}
-        scale={11}
-        blur={2.6}
-        far={5}
-        color="#000000"
-      />
-      <JerseyModel />
+      <pointLight position={[0, -0.8, 2.2]} intensity={3} color="#ffffff" />
+      <directionalLight position={[-2, 4, -3]} intensity={0.55} color="#ececec" />
     </>
   )
 }
 
 export function JerseyCanvas() {
   return (
-    <Canvas
-      dpr={[1, 1.5]}
-      gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
-      shadows
-      className="h-full w-full"
-      style={{ background: "#050505" }}
-    >
-      <AdaptiveDpr pixelated />
-      <Suspense fallback={null}>
-        <Scene />
-      </Suspense>
-    </Canvas>
+    <div className="absolute inset-0">
+      <Canvas
+        dpr={[1, 1.5]}
+        gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
+        shadows
+        className="h-full w-full"
+        style={{ background: "#050505" }}
+      >
+        <AdaptiveDpr pixelated />
+        <StudioCamera />
+        <Lights />
+        <BackdropMark />
+        <GroundMark />
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.64, 0]} receiveShadow>
+          <circleGeometry args={[7, 48]} />
+          <meshStandardMaterial color="#0a0c0b" metalness={0.72} roughness={0.28} />
+        </mesh>
+        <ContactShadows
+          position={[0, -1.63, 0]}
+          opacity={0.55}
+          scale={11}
+          blur={2.6}
+          far={5}
+          color="#000000"
+        />
+        <Suspense fallback={<Loader />}>
+          <Environment preset="studio" environmentIntensity={0.42} />
+          <JerseyModel />
+        </Suspense>
+      </Canvas>
+    </div>
   )
 }
